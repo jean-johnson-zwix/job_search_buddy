@@ -118,3 +118,28 @@ def _dt_str(dt) -> Optional[str]:
 
 def _now_str() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+def get_processed_job_ids(run_date=None) -> set[str]:
+    from datetime import date
+    db = get_client()
+    today = str(run_date or date.today())
+    res = (
+        db.table("resume_matches")
+        .select("job_id")
+        .eq("run_date", today)
+        .execute()
+    )
+    return {row["job_id"] for row in (res.data or [])}
+ 
+ 
+def get_existing_job_ids(job_ids: list[str]) -> set[str]:
+    if not job_ids:
+        return set()
+    db = get_client()
+    res = (
+        db.table("jobs")
+        .select("id")
+        .in_("id", job_ids)
+        .execute()
+    )
+    return {row["id"] for row in (res.data or [])}

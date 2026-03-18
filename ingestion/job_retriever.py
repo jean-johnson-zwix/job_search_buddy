@@ -6,44 +6,6 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-ENGINEERING_DEPT_INCLUDE = [
-    r"- eng\b",
-    r"engineering",
-    r"infrastructure",
-    r"ml foundations",
-    r"machine learning",
-    r"security eng",
-    r"security analytics",
-    r"security infrastructure",
-    r"security foundations",
-    r"data foundations",
-    r"data infrastructure",
-    r"developer infra",
-    r"service platform",
-    r"ml infra",
-    r"experimental",
-]
-
-ENGINEERING_DEPT_EXCLUDE = [
-    r"planning group",
-    r"planning org",
-    r"gtm",
-    r"- pm\b",
-    r"- g&a",
-    r"- s&m",
-    r"- s&o",
-    r"zzz",
-    r"\[ur\]",
-    r"privacy",
-    r"admin",
-]
-
-def _is_engineering_dept(name: str) -> bool:
-    n = name.lower().strip()
-    if any(re.search(p, n) for p in ENGINEERING_DEPT_EXCLUDE):
-        return False
-    return any(re.search(p, n) for p in ENGINEERING_DEPT_INCLUDE)
-
 def _get(url: str, timeout: int = 15) -> Optional[dict | list]:
     try:
         r = httpx.get(url, timeout=timeout, follow_redirects=True)
@@ -140,8 +102,6 @@ def fetch_ashby(slug: str) -> list[dict]:
             "posted_at":   _parse_iso(j.get("publishedAt")),
         })
     logger.info(f"  Ashby [{slug}]: {len(jobs)} jobs (unfiltered — title filter next)")
-    print(f"filtered depts: {set(filtered_depts)}")
-    print(f"filtered jobs: {set(filtered_titles)}")
     return jobs
 
 def fetch_jobs_for_company(ats: str, slug: str) -> list[dict]:
@@ -199,14 +159,6 @@ def _parse_iso(s: Optional[str]) -> Optional[datetime]:
         return None
     try:
         return datetime.fromisoformat(s.replace("Z", "+00:00"))
-    except Exception:
-        return None
-
-def _parse_epoch_ms(ms: Optional[int]) -> Optional[datetime]:
-    if not ms:
-        return None
-    try:
-        return datetime.fromtimestamp(ms / 1000, tz=timezone.utc)
     except Exception:
         return None
 
