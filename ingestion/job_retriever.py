@@ -1,28 +1,48 @@
 import httpx
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-ENGINEERING_DEPT_PATTERNS = [
-    r"^engineering$",
-    r"^software",
-    r"^data",
-    r"^machine learning",
-    r"^ai",
-    r"^infrastructure",
-    r"^platform",
-    r"^security",
-    r"^research",
-    r"^product engineering",
-    r"^tech",
-    r"^it"
+ENGINEERING_DEPT_INCLUDE = [
+    r"- eng\b",
+    r"engineering",
+    r"infrastructure",
+    r"ml foundations",
+    r"machine learning",
+    r"security eng",
+    r"security analytics",
+    r"security infrastructure",
+    r"security foundations",
+    r"data foundations",
+    r"data infrastructure",
+    r"developer infra",
+    r"service platform",
+    r"ml infra",
+    r"experimental",
+]
+
+ENGINEERING_DEPT_EXCLUDE = [
+    r"planning group",
+    r"planning org",
+    r"gtm",
+    r"- pm\b",
+    r"- g&a",
+    r"- s&m",
+    r"- s&o",
+    r"zzz",
+    r"\[ur\]",
+    r"privacy",
+    r"admin",
 ]
 
 def _is_engineering_dept(name: str) -> bool:
     n = name.lower().strip()
-    return any(re.search(p, n) for p in ENGINEERING_DEPT_PATTERNS)
+    if any(re.search(p, n) for p in ENGINEERING_DEPT_EXCLUDE):
+        return False
+    return any(re.search(p, n) for p in ENGINEERING_DEPT_INCLUDE)
 
 def _get(url: str, timeout: int = 15) -> Optional[dict | list]:
     try:
@@ -40,43 +60,33 @@ def fetch_greenhouse(slug: str) -> list[dict]:
     # Fetch all departments
     dept_url = f"https://boards-api.greenhouse.io/v1/boards/{slug}/departments"
     dept_data = _get(dept_url)
-    print (dept_data)
-    return [] 
-    eng_dept_ids = []
+    
+    candidate_job_ids: set[int] = set()
     if dept_data and "departments" in dept_data:
         for dept in dept_data["departments"]:
-            if _is_engineering_dept(dept.get("name", "")):
-                eng_dept_ids.append(dept["id"])
-                logger.info(
-                    f"  Greenhouse [{slug}]: "
-                    f"using dept '{dept['name']}' (id={dept['id']})"
-                )
-    # Fetch jobs per engineering department if departments available
-    if eng_dept_ids:
-        all_jobs = []
-        for dept_id in eng_dept_ids:
-            url = (
-                f"https://boards-api.greenhouse.io/v1/boards/{slug}"
-                f"/departments/{dept_id}"
-            )
-            data = _get(url)
-            if data and "jobs" in data:
-                all_jobs.extend(data["jobs"])
-        logger.info(
-            f"  Greenhouse [{slug}]: "
-            f"{len(all_jobs)} jobs from {len(eng_dept_ids)} engineering dept(s)"
-        )
-        return [_parse_gh_job(j) for j in all_jobs]
-    # Else fetch all content
-    logger.warning(
-        f"  Greenhouse [{slug}]: no engineering dept found, "
-        f"fetching all (title filter will apply)"
+            for job_stub in dept.get("jobs", []):
+                loc = (job_stub.get("location") or {}).get("name", "")
+                if _is_us_location_str(loc):
+                    candidate_job_ids.add(job_stub["id"])
+    logger.info(f"Greenhouse [{slug}]: {len(candidate_job_ids)} US candidate jobs")
+
+    # Fetch Job Descriptions
+    jobs_data = _get(
+        f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true"
     )
-    url = f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true"
-    data = _get(url)
-    if not data or "jobs" not in data:
+    if not jobs_data or "jobs" not in jobs_data:
         return []
-    return [_parse_gh_job(j) for j in data["jobs"]]
+ 
+    all_jobs = jobs_data["jobs"]
+    if candidate_job_ids:
+        filtered = [j for j in all_jobs if j["id"] in candidate_job_ids]
+    else:
+        filtered = all_jobs
+ 
+    logger.info(
+        f"  Greenhouse [{slug}]: {len(all_jobs)} total → {len(filtered)} after eng+US filter"
+    )
+    return [_parse_gh_job(j) for j in filtered]
 
 def _parse_gh_job(j: dict) -> dict:
     location = _gh_location(j)
@@ -97,89 +107,46 @@ def _gh_location(j: dict) -> str:
     loc = j.get("location", {})
     return loc.get("name", "") if isinstance(loc, dict) else ""
 
-def fetch_lever(slug: str) -> list[dict]:
-
-    target_teams = ["Engineering", "Data", "Machine Learning", "AI", "Platform", "Software", "IT"]
-    location_filter = "&location=United+States"
-    all_jobs = []
-    seen_ids = set()
-
-    for team in target_teams:
-        import urllib.parse
-        encoded = urllib.parse.quote(team)
-        url = (
-            f"https://api.lever.co/v0/postings/{slug}"
-            f"?mode=json&limit=200&team={encoded}{location_filter}"
-        )
-        data = _get(url)
-        postings = data if isinstance(data, list) else (data or {}).get("data", [])
-        for j in postings:
-            if j["id"] not in seen_ids:
-                seen_ids.add(j["id"])
-                all_jobs.append(_parse_lever_job(j))
- 
-    if all_jobs:
-        logger.info(f"  Lever [{slug}]: {len(all_jobs)} jobs (team-filtered)")
-        return all_jobs
-    
-    # fallback to get all jobs
-    logger.warning(f"  Lever [{slug}]: team filter returned nothing, fetching all")
-    url = f"https://api.lever.co/v0/postings/{slug}?mode=json&limit=200{location_filter}"
-    data = _get(url)
-    postings = data if isinstance(data, list) else (data or {}).get("data", [])
-    logger.info(f"  Lever [{slug}]: {len(postings)} jobs (unfiltered)")
-    return [_parse_lever_job(j) for j in postings]
-
-def _parse_lever_job(j: dict) -> dict:
-    location = j.get("categories", {}).get("location", "")
-    return {
-        "id":          f"lv_{j['id']}",
-        "title":       j.get("text", ""),
-        "location":    location,
-        "remote":      _is_remote(j.get("text", ""), location),
-        "description": _lever_description(j),
-        "apply_url":   j.get("hostedUrl", ""),
-        "posted_at":   _parse_epoch_ms(j.get("createdAt")),
-    }
-
-def _lever_description(j: dict) -> str:
-    parts = []
-    for section in j.get("descriptionBody", {}).get("content", []):
-        for node in section.get("content", []):
-            text = node.get("text", "")
-            if text:
-                parts.append(text)
-    if not parts:
-        parts.append(j.get("descriptionPlain", ""))
-    return " ".join(parts)
-
-
 def fetch_ashby(slug: str) -> list[dict]:
     url = f"https://api.ashbyhq.com/posting-api/job-board/{slug}"
     data = _get(url)
-    if not data or "jobPostings" not in data:
+    if not data or "jobs" not in data:
         logger.warning(f"Ashby: no jobs found for {slug}")
         return []
-
     jobs = []
-    for j in data["jobPostings"]:
-        location = j.get("locationName", "")
+    for j in data["jobs"]:
+        # skip unlisted
+        if not j.get("isListed", True):
+            continue
+        # get location
+        address = j.get("address", {}) or {}
+        postal = address.get("postalAddress", {}) or {}
+        country = postal.get("addressCountry", "")
+        location_str = j.get("location", "")
+        # filter based on location
+        if country:
+            if country not in ("United States", "US", "USA"):
+                continue
+        else:
+            if not _is_us_location_str(location_str):
+                continue
         jobs.append({
             "id":          f"ab_{j['id']}",
             "title":       j.get("title", ""),
-            "location":    location,
-            "remote":      j.get("isRemote", False) or _is_remote(j.get("title", ""), location),
+            "location":    location_str,
+            "remote":      j.get("isRemote", False) or _is_remote(j.get("title", ""), location_str),
             "description": j.get("descriptionPlain", j.get("descriptionHtml", "")),
             "apply_url":   j.get("jobUrl", ""),
             "posted_at":   _parse_iso(j.get("publishedAt")),
         })
     logger.info(f"  Ashby [{slug}]: {len(jobs)} jobs (unfiltered — title filter next)")
+    print(f"filtered depts: {set(filtered_depts)}")
+    print(f"filtered jobs: {set(filtered_titles)}")
     return jobs
 
 def fetch_jobs_for_company(ats: str, slug: str) -> list[dict]:
     fetchers = {
         "greenhouse": fetch_greenhouse,
-        "lever":      fetch_lever,
         "ashby":      fetch_ashby,
     }
     fn = fetchers.get(ats)
@@ -187,6 +154,45 @@ def fetch_jobs_for_company(ats: str, slug: str) -> list[dict]:
         logger.error(f"Unknown ATS: {ats}")
         return []
     return fn(slug)
+
+US_SIGNALS = [
+    r"\bUS\b", r"\bU\.S\b", r"United States",
+    r"\bremote\b", r"\banywhere\b",
+    r"\bSF\b", r"\bSEA\b", r"\bNYC\b", r"\bNY\b", r"\bCHI\b",
+    r"\bATL\b", r"\bDC\b", r"\bLA\b",
+    r"San Francisco", r"Seattle", r"New York", r"Chicago",
+    r"Atlanta", r"Austin", r"Boston", r"Denver", r"Washington",
+    r"California", r"Texas", r"Hawaii",
+    r"\bNA\b", r"North America",
+]
+ 
+NON_US_SIGNALS = [
+    r"Dublin", r"London", r"Bengaluru", r"Bangalore", r"Toronto",
+    r"Singapore", r"Tokyo", r"Sydney", r"Melbourne", r"Paris",
+    r"Berlin", r"Munich", r"Amsterdam", r"Barcelona", r"Madrid",
+    r"Stockholm", r"Luxembourg", r"Bucharest", r"Romania",
+    r"Mexico City", r"Mexico\b", r"CDMX",
+    r"\bCanada\b", r"\bIndia\b", r"\bIreland\b", r"\bUK\b",
+    r"\bGermany\b", r"\bFrance\b", r"\bSpain\b", r"\bJapan\b",
+    r"\bAustralia\b", r"\bBrazil\b",
+    r"\bEMEA\b", r"\bAPAC\b", r"\bLATAM\b",
+]
+ 
+_UNKNOWN_EXACT = {"", "n/a", "na", "location", "null", "tbd", "remote-us/ca"}
+
+def _is_us_location_str(location: str) -> bool:
+    if not location:
+        return True
+    stripped = location.strip().lower()
+    if stripped in _UNKNOWN_EXACT:
+        return True
+    for pat in NON_US_SIGNALS:
+        if re.search(pat, location, re.IGNORECASE):
+            return False
+    for pat in US_SIGNALS:
+        if re.search(pat, location, re.IGNORECASE):
+            return True
+    return True
 
 def _parse_iso(s: Optional[str]) -> Optional[datetime]:
     if not s:
@@ -208,8 +214,6 @@ def _is_remote(title: str, location: str) -> bool:
     text = f"{title} {location}".lower()
     return any(w in text for w in ["remote", "anywhere", "distributed", "work from home"])
 
-
-import re
 def _strip_html(html: str) -> str:
     text = re.sub(r"<[^>]+>", " ", html)
     text = re.sub(r"&nbsp;", " ", text)
