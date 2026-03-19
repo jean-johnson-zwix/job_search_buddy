@@ -5,7 +5,8 @@ import re
 from intelligence.prompts import (
     JOB_SKILL_EXTRACTION_SYSTEM,
     JOB_SKILL_EXTRACTION_USER,
-    JOB_RESUME_MATCH_SYSTEM_TEMPLATE,
+    JOB_RESUME_MATCH_SYSTEM,
+    JOB_RESUME_MATCH_USER
 )
 from intelligence.llm import call_llm
 from intelligence.llm_config import JOB_SKILL_EXTRACTION, JOB_RESUME_MATCH
@@ -41,15 +42,15 @@ def extract_skills_from_jobs(title: str, description: str) -> dict | None:
         return None
 
 
-def match_resume_to_jobs(title: str, description: str, system_prompt: str) -> dict | None:
-    user = JOB_RESUME_MATCH_SYSTEM_TEMPLATE.format(
+def match_resume_to_job(title: str, description: str) -> dict | None:
+    user = JOB_RESUME_MATCH_USER.format(
         title=title,
-        description=description[:2500],
+        description=description[:4000],
     )
     try:
         raw = call_llm(
             task=JOB_RESUME_MATCH,
-            system_prompt=system_prompt,
+            system_prompt=JOB_RESUME_MATCH_SYSTEM,
             user_prompt=user,
         )
         return _parse_json(raw)

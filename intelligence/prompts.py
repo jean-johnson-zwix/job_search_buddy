@@ -34,6 +34,9 @@ EXTRACTION RULES:
 - Scan ALL sections independently: Responsibilities, Requirements,
   Preferred/Nice-to-have, Tech Stack, About the Role, Qualifications
 - skills: extract ALL concrete technical skills found anywhere in the JD — no limit
+- Do not extract domain names or architectural concepts as skills 
+  ("distributed systems", "frontend", "cloud", "backend", "microservices" 
+  are domains — only extract concrete named technologies)
 - If the JD is language-agnostic or intentionally vague about tech stack, 
   return only what is explicitly mentioned — do not infer or hallucinate skills
 - A JD with 3 skills is valid output if only 3 are mentioned
@@ -49,11 +52,14 @@ EXTRACTION RULES:
 - role_type: "ML" only if role involves model training/research; RAG/LLM pipelines = "SWE"
 """
 
-JOB_RESUME_MATCH_SYSTEM_TEMPLATE = """You are a technical recruiter evaluating job fit.
+import datastore.db as db
+condensed_resume = db.get_candidate_profile("condensed_resume")
+
+JOB_RESUME_MATCH_SYSTEM = f"""You are a technical recruiter evaluating job fit.
 Given a candidate profile and a job description, return ONLY valid JSON.
 
 CANDIDATE:
-{candidate_profile}
+{condensed_resume}
 
 OUTPUT SCHEMA:
 {{
@@ -95,6 +101,10 @@ RULES:
   "frontend only", domain-specific reqs the candidate lacks
 - Be strict on gap_skills: if a required skill has no adjacent equivalent → gap
 - max 8 matched_skills, max 8 gap_skills, max 5 green_flags, max 3 red_flags
+- matched_skills: canonical technology names only — "TypeScript" not 
+  "strongly-typed language experience", "Docker" not "containerization"
+- gap_skills: canonical technology names only — if the JD has no concrete 
+  required skill Jean is missing, return []
 """
 
 JOB_RESUME_MATCH_USER = "Title: {title}\n\nDescription:\n{description}"
@@ -152,11 +162,6 @@ LEVEL:
 
 STRENGTHS:
 [3-4 specific technical strengths with evidence from the resume]
-
-GAPS:
-[2-3 gaps that would actually appear as requirements in real job postings — 
-domain gaps (fintech, payments), scale gaps (LLM production serving), 
-or skill gaps (Go, Rust if relevant). Avoid theoretical gaps that no JD requires.]
 
 RULES:
 - Prefer conservative interpretation over inflated claims.
