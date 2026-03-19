@@ -1,10 +1,11 @@
 from google_auth_oauthlib.flow import InstalledAppFlow
 import json
 
-SCOPES = ["https://www.googleapis.com/auth/documents.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/documents.readonly",
+          "https://www.googleapis.com/auth/drive.metadata.readonly"]
 
 flow = InstalledAppFlow.from_client_secrets_file(
-    "credentials.json",
+    "resources/credentials.json",
     scopes=SCOPES
 )
 creds = flow.run_local_server(port=0)
