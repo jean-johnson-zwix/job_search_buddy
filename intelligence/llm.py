@@ -306,11 +306,6 @@ def get_llm() -> LLMClient:
     return _client
 
 
-def _prompt_token_length(system_prompt: str, user_prompt: str) -> int:
-    prompt_chars = len(system_prompt) + len(user_prompt)
-    return prompt_chars // 4
-
-
 def call_llm(
     model=None,
     provider=None,
@@ -352,7 +347,7 @@ def call_llm(
     end = time.perf_counter()
     logger.info(
         "LLM call success | task=%s provider=%s model=%s response_format=%s "
-        "max_tokens=%s temperature=%s duration_ms=%s response_chars=%s prompt_tokens=%s",
+        "max_tokens=%s temperature=%s duration_ms=%s response_chars=%s",
         task,
         provider,
         model,
@@ -360,7 +355,5 @@ def call_llm(
         max_tokens,
         temperature,
         round((end - start) * 1000, 2),
-        len(response) if response else 0,
-        _prompt_token_length(system_prompt, user_prompt),
-    )
+        len(response) if response else 0)
     return response

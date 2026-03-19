@@ -3,6 +3,7 @@ import logging
 import re
 from datetime import datetime, timezone
 from typing import Optional
+import html
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +98,7 @@ def fetch_ashby(slug: str) -> list[dict]:
             "title":       j.get("title", ""),
             "location":    location_str,
             "remote":      j.get("isRemote", False) or _is_remote(j.get("title", ""), location_str),
-            "description": j.get("descriptionPlain", j.get("descriptionHtml", "")),
+            "description": _strip_html(j.get("descriptionPlain", j.get("descriptionHtml", ""))),
             "apply_url":   j.get("jobUrl", ""),
             "posted_at":   _parse_iso(j.get("publishedAt")),
         })
@@ -166,9 +167,8 @@ def _is_remote(title: str, location: str) -> bool:
     text = f"{title} {location}".lower()
     return any(w in text for w in ["remote", "anywhere", "distributed", "work from home"])
 
-def _strip_html(html: str) -> str:
-    text = re.sub(r"<[^>]+>", " ", html)
-    text = re.sub(r"&nbsp;", " ", text)
-    text = re.sub(r"&amp;", "&", text)
+def _strip_html(raw: str) -> str:
+    text = html.unescape(raw)           # &lt;p&gt; → <p>  FIRST
+    text = re.sub(r"<[^>]+>", " ", text)  # now strip the actual tags
     text = re.sub(r"\s+", " ", text)
     return text.strip()

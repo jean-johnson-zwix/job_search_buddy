@@ -117,6 +117,18 @@ IRRELEVANT_PRIMARY = [
     r"\bpolicy\b",
     r"\bprocurement\b",
     r"\bsourcing\b",
+    # irrelivant engineer
+    r"\bsecurity engineer\b",
+    r"\bprivacy engineer\b",
+    r"\bblockchain\b",
+    r"\bios engineer\b",
+    r"\bandroid engineer\b",
+    r"\bios software\b",
+    r"\bandroid software\b",
+    r"\bmobile engineer\b",
+    r"\bweb engineer\b",
+    r"\bdevops engineer\b",
+    r"\bdevops\b",
 ]
 
 RELEVANT_PRIMARY = [
@@ -128,8 +140,6 @@ RELEVANT_PRIMARY = [
     r"\bplatform engineer\b",
     r"\binfrastructure engineer\b",
     r"\binfrastructure software\b",
-    r"\bdevops engineer\b",
-    r"\bdevops\b",
     r"\bsite reliability\b",
     r"\bsre\b",
     r"\bcloud engineer\b",
@@ -144,15 +154,6 @@ RELEVANT_PRIMARY = [
     r"\bresearch scientist\b",
     r"\bdata scientist\b",
     r"\bmlops\b",
-    r"\bsecurity engineer\b",
-    r"\bprivacy engineer\b",
-    r"\bblockchain\b",
-    r"\bios engineer\b",
-    r"\bandroid engineer\b",
-    r"\bios software\b",
-    r"\bandroid software\b",
-    r"\bmobile engineer\b",
-    r"\bweb engineer\b",
     # broad catch-all — trust IRRELEVANT to block non-eng
     r"\bengineer\b",
     r"\bplatform\b",

@@ -3,6 +3,8 @@ from typing import Dict, Any, List, Tuple
 # LLM Task Directory
 RESUME_SKILL_EXTRACTION = "resume_skill_extraction"
 RESUME_CONDENSATION = "resume_condensation"
+JOB_SKILL_EXTRACTION = "job_skill_extraction"
+JOB_RESUME_MATCH = "job_resume_match"
 
 PROVIDER_TIMEOUTS = {
     "gemini":     30,
@@ -36,6 +38,30 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "max_tokens": 1200,
         "temperature": 0.2,
         "response_format": "text",
+    },
+    JOB_SKILL_EXTRACTION: {
+        "description": "Extract role_type, seniority, years_required, skills[] from a JD",
+        "provider":    "gemini",
+        "model":       "gemini-3.1-flash-lite-preview",
+        "fallbacks": [
+            ("groq",       "llama-3.3-70b-versatile"),
+            ("openrouter", "z-ai/glm-4.5-air:free"),
+        ],
+        "max_tokens":      2048,
+        "temperature":     0.0,
+        "response_format": "json",
+    },
+    JOB_RESUME_MATCH: {
+        "description": "Score skill_fit, role_fit, experience_fit against candidate profile",
+        "provider":    "gemini",
+        "model":       "gemini-3.1-flash-lite-preview",
+        "fallbacks": [
+            ("groq",       "llama-3.3-70b-versatile"),
+            ("openrouter", "z-ai/glm-4.5-air:free"),
+        ],
+        "max_tokens":      1024,
+        "temperature":     0.1,
+        "response_format": "json",
     },
 }
 

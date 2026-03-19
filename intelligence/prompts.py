@@ -9,9 +9,9 @@ NORMALIZATION RULES (apply to every skill name):
 7. When in doubt: google the official product name and use that exactly
 """
 
-JD_SKILL_EXTRACT_USER = "Title: {title}\n\nDescription:\n{description}"
+JOB_SKILL_EXTRACTION_USER = "Title: {title}\n\nDescription:\n{description}"
 
-JD_SKILL_EXTRACT_SYSTEM = f"""You are a technical job description parser.
+JOB_SKILL_EXTRACTION_SYSTEM = f"""You are a technical job description parser.
 Return ONLY valid JSON — no markdown, no explanation, no prose.
 
 {NORMALIZATION_RULES}
@@ -24,23 +24,32 @@ OUTPUT SCHEMA:
   "skills": [
     {{
       "name": "<canonical skill name>",
-      "category": "language" | "framework" | "cloud" | "tool" | "concept" | "other",
+      "category": "language" | "framework" | "cloud" | "database" | "tool" | "other",
       "required": true | false
     }}
   ]
 }}
 
 EXTRACTION RULES:
-- skills: max 15, concrete technical only, no soft skills
-- required=true if JD says "required", "must have", or lists without qualification
-- required=false if JD says "preferred", "nice to have", "bonus", "plus"
+- Scan ALL sections independently: Responsibilities, Requirements,
+  Preferred/Nice-to-have, Tech Stack, About the Role, Qualifications
+- skills: extract ALL concrete technical skills found anywhere in the JD — no limit
+- If the JD is language-agnostic or intentionally vague about tech stack, 
+  return only what is explicitly mentioned — do not infer or hallucinate skills
+- A JD with 3 skills is valid output if only 3 are mentioned
+- concrete = languages, frameworks, cloud services, databases, tools, ML libraries
+- no soft skills ("communication"), no methodologies ("agile"), no vague terms
+- required=true if skill is in Requirements/Must-have section or listed without qualification
+- required=false if skill is in Preferred/Nice-to-have/Bonus/Plus section
 - years_required: extract the MINIMUM years stated ("5-8 years" → 5, "5+ years" → 5)
 - years_required: null if not mentioned
 - seniority: infer from title and scope, not years alone
+- seniority: if years_required range spans more than 4 years (e.g. "2-12+"), 
+  use "Unknown" — wide ranges indicate intentional ambiguity
 - role_type: "ML" only if role involves model training/research; RAG/LLM pipelines = "SWE"
 """
 
-SMART_MATCH_SYSTEM_TEMPLATE = """You are a technical recruiter evaluating job fit.
+JOB_RESUME_MATCH_SYSTEM_TEMPLATE = """You are a technical recruiter evaluating job fit.
 Given a candidate profile and a job description, return ONLY valid JSON.
 
 CANDIDATE:
@@ -88,7 +97,7 @@ RULES:
 - max 8 matched_skills, max 8 gap_skills, max 5 green_flags, max 3 red_flags
 """
 
-SMART_MATCH_USER = "Title: {title}\n\nDescription:\n{description}"
+JOB_RESUME_MATCH_USER = "Title: {title}\n\nDescription:\n{description}"
 
 RESUME_SKILL_EXTRACTION_SYSTEM = f"""You are a resume skill extractor.
 Return ONLY valid JSON — no markdown, no explanation.
