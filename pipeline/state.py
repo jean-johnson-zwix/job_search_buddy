@@ -6,7 +6,6 @@ class PipelineState(TypedDict):
     # load at start
     companies: list[dict] 
     candidate_skills: list[str]
-    job_resume_match_prompt: str
     already_scored: set
 
     # ingestion_node: retrieve and filter nodes
@@ -20,5 +19,5 @@ class PipelineState(TypedDict):
     matched_jobs: list[dict]
 
     # diagnostics:
-    states: dict
+    stats: dict
     errors: list

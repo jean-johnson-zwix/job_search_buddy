@@ -19,10 +19,8 @@ def get_client() -> Client:
     return _client
 
 def get_all_companies() -> list[dict]:
-    print('inside get all companies')
     db = get_client()
     res = db.table("companies").select("*").execute()
-    print(res)
     return res.data or []
 
 def upsert_job(job: dict) -> None:

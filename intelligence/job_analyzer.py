@@ -30,7 +30,6 @@ def extract_skills_from_jobs(title: str, description: str) -> dict | None:
         description=description[:4000],
     )
     try:
-        print(f"SYSTEM_PROMPT\n{JOB_SKILL_EXTRACTION_SYSTEM}\nUSER PROMPT\n{user}")
         raw = call_llm(
             task=JOB_SKILL_EXTRACTION,
             system_prompt=JOB_SKILL_EXTRACTION_SYSTEM,
