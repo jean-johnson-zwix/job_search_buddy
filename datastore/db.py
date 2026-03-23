@@ -148,6 +148,33 @@ def get_processed_job_ids(run_date: Optional[date] = None) -> set[str]:
     return {row["job_id"] for row in (res.data or [])}
 
 
+def update_job_status(job_id: str, status: str, notes: str = None) -> None:
+    db = get_client()
+    payload = {
+        "status": status,
+        "status_updated_at": _now_str(),
+    }
+    if notes is not None:
+        payload["notes"] = notes
+    db.table("resume_matches").update(payload).eq("job_id", job_id).execute()
+
+
+def get_applied_jobs(limit: int = 100) -> list[dict]:
+    db = get_client()
+    res = (
+        db.table("resume_matches")
+        .select(
+            "status, status_updated_at, notes, final_score, "
+            "jobs(id, title, apply_url, companies(name, tier))"
+        )
+        .in_("status", ["applied", "interviewing", "rejected"])
+        .order("status_updated_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return res.data or []
+
+
 def get_top_matches(limit: int = 15, run_date: Optional[date] = None) -> list[dict]:
     db = get_client()
     today = str(run_date or date.today())
@@ -161,6 +188,7 @@ def get_top_matches(limit: int = 15, run_date: Optional[date] = None) -> list[di
             "companies(name, tier))"
         )
         .eq("run_date", today)
+        .in_("status", ["new", "reviewing"])
         .order("final_score", desc=True)
         .limit(limit)
         .execute()
