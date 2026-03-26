@@ -1,6 +1,3 @@
-*/__pycache__
-.env
-v1/*
-test*
-resources/
 __pycache__/
+INSTRUCTIONS.md
+CLAUDE.md
