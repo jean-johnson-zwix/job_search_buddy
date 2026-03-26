@@ -146,12 +146,8 @@ class LLMClient:
                 if attempt >= self.max_retries:
                     raise
 
-                if self._is_rate_limit_error(e):
-                    # Rate limit: wait long enough for the provider's quota window to recover
-                    delay = random.uniform(15, 30)
-                else:
-                    cap = 30.0
-                    delay = random.uniform(0, min(cap, self.retry_base_delay * (2 ** attempt)))
+                cap = 30.0
+                delay = random.uniform(0, min(cap, self.retry_base_delay * (2 ** attempt)))
                 logger.warning(
                     "Retryable LLM error [%s/%s], backing off %.2fs before retry (attempt %d): %s",
                     provider, model, delay, attempt + 1, repr(e),
@@ -169,15 +165,10 @@ class LLMClient:
 
         if isinstance(error, httpx.HTTPStatusError):
             status = error.response.status_code
-            return status == 429 or 500 <= status < 600
+            # 429 is NOT retried on the same provider — fall through to next fallback immediately
+            return 500 <= status < 600
 
         return False
-
-    def _is_rate_limit_error(self, error: Exception) -> bool:
-        return (
-            isinstance(error, httpx.HTTPStatusError)
-            and error.response.status_code == 429
-        )
 
     def _call_gemini(
         self,
@@ -206,7 +197,7 @@ class LLMClient:
             "Content-Type": "application/json",
             "x-goog-api-key": self.gemini_api_key,
         }
-        timeout = PROVIDER_TIMEOUTS.get("gemini", 30)
+        timeout = PROVIDER_TIMEOUTS.get("gemini", self.timeout)
         r = httpx.post(url, json=payload, headers=headers, timeout=timeout)
         r.raise_for_status()
         data = r.json()
@@ -246,7 +237,7 @@ class LLMClient:
             "Content-Type": "application/json",
         }
 
-        timeout = PROVIDER_TIMEOUTS.get('openrouter', 30)
+        timeout = PROVIDER_TIMEOUTS.get("openrouter", self.timeout)
         r = httpx.post(url, json=payload, headers=headers, timeout=timeout)
         r.raise_for_status()
         data = r.json()
@@ -292,7 +283,7 @@ class LLMClient:
             "Content-Type": "application/json",
         }
 
-        timeout = PROVIDER_TIMEOUTS.get("groq", 30)
+        timeout = PROVIDER_TIMEOUTS.get("groq", self.timeout)
         r = httpx.post(url, json=payload, headers=headers, timeout=timeout)
         r.raise_for_status()
         data = r.json()
@@ -337,7 +328,7 @@ class LLMClient:
             "Content-Type":  "application/json",
         }
 
-        timeout = PROVIDER_TIMEOUTS.get("cerebras", 30)
+        timeout = PROVIDER_TIMEOUTS.get("cerebras", self.timeout)
         r = httpx.post(url, json=payload, headers=headers, timeout=timeout)
         r.raise_for_status()
         data = r.json()
@@ -382,7 +373,7 @@ class LLMClient:
             "Content-Type":  "application/json",
         }
 
-        timeout = PROVIDER_TIMEOUTS.get("sambanova", 60)
+        timeout = PROVIDER_TIMEOUTS.get("sambanova", self.timeout)
         r = httpx.post(url, json=payload, headers=headers, timeout=timeout)
         r.raise_for_status()
         data = r.json()
