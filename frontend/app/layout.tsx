@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ background: 'var(--bg-dark)', color: 'var(--text-primary)' }}>
+      <body style={{ background: 'var(--bg-dark)', color: 'var(--text-primary)' }} suppressHydrationWarning>
 
         {/* Nav */}
         <nav style={{
@@ -59,13 +59,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             ))}
           </div>
 
-          <span style={{
-            fontFamily: 'DM Mono, monospace',
-            fontSize: '10px',
-            color: 'var(--text-muted)',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase' as const,
-          }}>
+          <span
+            suppressHydrationWarning
+            style={{
+              fontFamily: 'DM Mono, monospace',
+              fontSize: '10px',
+              color: 'var(--text-muted)',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase' as const,
+            }}
+          >
             {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
         </nav>
