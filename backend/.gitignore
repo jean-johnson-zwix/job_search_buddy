@@ -1,0 +1,7 @@
+*/__pycache__
+.env
+v1/*
+test*
+resources/
+__pycache__/
+CLAUDE.md
