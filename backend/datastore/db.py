@@ -219,3 +219,42 @@ def _dt_str(dt) -> Optional[str]:
 
 def _now_str() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def save_llm_usage(entries: list[dict], run_date: Optional[date] = None) -> None:
+    """Aggregate per-call usage entries by task and upsert into llm_usage."""
+    if not entries:
+        return
+    db = get_client()
+    today = str(run_date or date.today())
+
+    # aggregate by task
+    agg: dict[str, dict] = {}
+    for e in entries:
+        task = e["task"]
+        if task not in agg:
+            agg[task] = {
+                "run_date":         today,
+                "task":             task,
+                "provider":         e["provider"],
+                "model":            e["model"],
+                "calls":            0,
+                "prompt_tokens":    0,
+                "completion_tokens": 0,
+                "total_tokens":     0,
+                "_duration_sum":    0.0,
+            }
+        agg[task]["calls"]             += 1
+        agg[task]["prompt_tokens"]     += e.get("prompt_tokens", 0)
+        agg[task]["completion_tokens"] += e.get("completion_tokens", 0)
+        agg[task]["total_tokens"]      += e.get("total_tokens", 0)
+        agg[task]["_duration_sum"]     += e.get("duration_ms", 0.0)
+
+    rows = []
+    for row in agg.values():
+        avg_ms = round(row.pop("_duration_sum") / row["calls"], 2) if row["calls"] else 0
+        row["avg_duration_ms"] = avg_ms
+        rows.append(row)
+
+    db.table("llm_usage").upsert(rows, on_conflict="run_date,task").execute()
+    logger.info(f"Saved LLM usage: {len(rows)} task(s) for {today}")

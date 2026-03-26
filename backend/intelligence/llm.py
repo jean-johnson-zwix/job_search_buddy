@@ -22,6 +22,7 @@ class LLMClient:
         self.timeout = 30
         self.max_retries = 2
         self.retry_base_delay = 1.0
+        self._last_usage: dict = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
     def call(
         self,
@@ -195,13 +196,11 @@ class LLMClient:
         r.raise_for_status()
         data = r.json()
         usage = data.get("usageMetadata", {})
-        if usage:
-            logger.info(
-                "Usage Metadata = promptTokenCount=%s, candidatesTokenCount=%s, totalTokenCount=%s",
-                usage.get("promptTokenCount", "?"),
-                usage.get("candidatesTokenCount", "?"),
-                usage.get("totalTokenCount", "?"),
-            )
+        self._last_usage = {
+            "prompt_tokens":     usage.get("promptTokenCount", 0),
+            "completion_tokens": usage.get("candidatesTokenCount", 0),
+            "total_tokens":      usage.get("totalTokenCount", 0),
+        }
         return data["candidates"][0]["content"]["parts"][0]["text"]
 
     def _call_openrouter(
@@ -239,11 +238,11 @@ class LLMClient:
         r.raise_for_status()
         data = r.json()
         usage = data.get("usage", {})
-        if usage:
-            logger.info("Usage: prompt=%s completion=%s total=%s",
-                        usage.get("prompt_tokens"), 
-                        usage.get("completion_tokens"),
-                        usage.get("total_tokens"))
+        self._last_usage = {
+            "prompt_tokens":     usage.get("prompt_tokens", 0),
+            "completion_tokens": usage.get("completion_tokens", 0),
+            "total_tokens":      usage.get("total_tokens", 0),
+        }
         content = data["choices"][0]["message"]["content"]
         if not content:
             raise ValueError(f"Empty response content from {model}")
@@ -285,15 +284,30 @@ class LLMClient:
         r.raise_for_status()
         data = r.json()
         usage = data.get("usage", {})
-        if usage:
-            logger.info("Usage: prompt=%s completion=%s total=%s",
-                        usage.get("prompt_tokens"), 
-                        usage.get("completion_tokens"),
-                        usage.get("total_tokens"))
+        self._last_usage = {
+            "prompt_tokens":     usage.get("prompt_tokens", 0),
+            "completion_tokens": usage.get("completion_tokens", 0),
+            "total_tokens":      usage.get("total_tokens", 0),
+        }
         content = data["choices"][0]["message"]["content"]
         if not content:
             raise ValueError(f"Empty response content from {model}")
         return content
+
+
+# ---------------------------------------------------------------------------
+# Module-level usage accumulator — reset each pipeline run
+# ---------------------------------------------------------------------------
+_usage_log: list[dict] = []
+
+
+def get_usage_log() -> list[dict]:
+    return list(_usage_log)
+
+
+def reset_usage_log() -> None:
+    global _usage_log
+    _usage_log = []
 
 
 _client: Optional[LLMClient] = None
@@ -345,15 +359,19 @@ def call_llm(
         fallbacks=fallbacks,
     )
     end = time.perf_counter()
+    duration_ms = round((end - start) * 1000, 2)
     logger.info(
-        "LLM call success | task=%s provider=%s model=%s response_format=%s "
-        "max_tokens=%s temperature=%s duration_ms=%s response_chars=%s",
-        task,
-        provider,
-        model,
-        response_format,
-        max_tokens,
-        temperature,
-        round((end - start) * 1000, 2),
-        len(response) if response else 0)
+        "LLM call success | task=%s provider=%s model=%s duration_ms=%s",
+        task, provider, model, duration_ms,
+    )
+    last = get_llm()._last_usage
+    _usage_log.append({
+        "task":              task or "unknown",
+        "provider":          provider,
+        "model":             model,
+        "prompt_tokens":     last["prompt_tokens"],
+        "completion_tokens": last["completion_tokens"],
+        "total_tokens":      last["total_tokens"],
+        "duration_ms":       duration_ms,
+    })
     return response

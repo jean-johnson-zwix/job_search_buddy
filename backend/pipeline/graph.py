@@ -5,6 +5,7 @@ from langgraph.graph import StateGraph, END
 
 # nodes
 from datastore import db
+from intelligence.llm import get_usage_log, reset_usage_log
 from ingestion.job_retriever import fetch_jobs_for_company
 from ingestion.job_filter import filter_jobs
 from intelligence.resume_parser import run_resume_parser
@@ -24,6 +25,7 @@ DELAY_SEC = 4  # avoid RQM limits
 @log_methods
 def node_resume_extraction(state: PipelineState) -> dict:
     logger.info("NODE 1 - RESUME EXTRACTION")
+    reset_usage_log()
     try:
         success = run_resume_parser(force=False) # only if modified
         logger.info(f"Resume {'parsed' if success else 'loaded from database'}")
@@ -117,8 +119,15 @@ def node_job_extraction(state: PipelineState) -> dict:
     errors    = list(state["errors"])
     call_count = 0
 
+    # cap new jobs via MAX_NEW_JOBS env var (useful for first runs)
+    import os
+    max_new = int(os.getenv("MAX_NEW_JOBS", 0)) or None
+    new_jobs = state["new_jobs"][:max_new] if max_new else state["new_jobs"]
+    if max_new and len(state["new_jobs"]) > max_new:
+        logger.warning(f"MAX_NEW_JOBS={max_new}: capping {len(state['new_jobs'])} → {max_new} new jobs")
+
     # new jobs - extract skills via llm
-    for job in state["new_jobs"]:
+    for job in new_jobs:
         try:
             result = extract_skills_from_jobs(
                 job["title"],
@@ -229,6 +238,10 @@ def node_job_match(state: PipelineState) -> dict:
 @log_methods
 def node_emailer(state: PipelineState) -> dict:
     logger.info("NODE 6 - EMAIL SENDER")
+    try:
+        db.save_llm_usage(get_usage_log())
+    except Exception as e:
+        logger.error(f"  LLM usage save failed: {e}")
     try:
         send_daily_digest()
     except Exception as e:
