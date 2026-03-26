@@ -19,7 +19,7 @@ from pipeline.state import PipelineState
 
 logger = logging.getLogger(__name__)
 
-DELAY_SEC = 4  # avoid RQM limits
+DELAY_SEC=8  # avoid RQM limits
 
 #node 1: load resume + extract skills
 @log_methods
