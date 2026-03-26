@@ -18,9 +18,9 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "provider": "gemini",
         "model": "gemini-3.1-flash-lite-preview",
         "fallbacks": [
-            ("groq", "qwen/qwen3-32b"),
-            ("openrouter", "z-ai/glm-4.5-air:free"),
-            ("openrouter", "nvidia/nemotron-3-super-120b-a12b:free"),
+            ("groq", "llama-3.3-70b-versatile"),
+            ("openrouter", "deepseek/deepseek-v3:free"),
+            ("openrouter", "google/gemini-2.0-flash-001:free"),
         ],
         "max_tokens": 2048,
         "temperature": 0.0,
@@ -32,8 +32,8 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "model": "gemini-3.1-flash-lite-preview",
         "fallbacks": [
             ("groq",       "qwen/qwen3-32b"),
-            ("openrouter", "z-ai/glm-4.5-air:free"),
-            ("openrouter", "nvidia/nemotron-3-super-120b-a12b:free"),
+            ("openrouter", "microsoft/phi-4:free"),
+            ("openrouter", "mistralai/mistral-7b-instruct:free"),
         ],
         "max_tokens": 1200,
         "temperature": 0.2,
@@ -45,7 +45,7 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "model":       "gemini-3.1-flash-lite-preview",
         "fallbacks": [
             ("groq",       "llama-3.3-70b-versatile"),
-            ("openrouter", "z-ai/glm-4.5-air:free"),
+            ("openrouter", "deepseek/deepseek-v3:free"),
         ],
         "max_tokens":      2048,
         "temperature":     0.0,
