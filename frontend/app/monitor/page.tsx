@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { StatStrip } from '@/components/StatStrip'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell,
+  ResponsiveContainer,
 } from 'recharts'
 
 const CARD_STYLE = {
@@ -34,6 +34,7 @@ const PROVIDER_COLOR: Record<string, string> = {
   groq:       '#8fbf8a',
   openrouter: '#a899e6',
   cerebras:   '#f0a070',
+  sambanova:  '#70c8f0',
 }
 
 const TOOLTIP_STYLE = {
@@ -80,7 +81,6 @@ export default function MonitorPage() {
   // Stats from latest run
   const totalCalls  = latestRows.reduce((s: number, r: any) => s + r.calls, 0)
   const totalTokens = latestRows.reduce((s: number, r: any) => s + r.total_tokens, 0)
-  const providers   = [...new Set(latestRows.map((r: any) => r.provider))].join(', ')
   const runDays     = dates.length
 
   // Errors grouped by date
@@ -99,10 +99,12 @@ export default function MonitorPage() {
   ]
 
   // Chart: tokens per run date (last 14 days)
-  const tokenTrend = dates.slice(0, 14).reverse().map(date => ({
-    date: date.slice(5), // MM-DD
+  const tokenTrendRaw = dates.slice(0, 14).reverse()
+  const tokenTrend = tokenTrendRaw.map((date, i) => ({
+    date:   date.slice(5),
     tokens: byDate[date].reduce((s: number, r: any) => s + r.total_tokens, 0),
     calls:  byDate[date].reduce((s: number, r: any) => s + r.calls, 0),
+    fill:   i === tokenTrendRaw.length - 1 ? 'rgba(245,230,66,0.9)' : 'rgba(245,230,66,0.4)',
   }))
 
   return (
@@ -142,11 +144,7 @@ export default function MonitorPage() {
                 <XAxis dataKey="date" tick={{ fontSize: 10, fontFamily: 'DM Mono, monospace', fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fontFamily: 'DM Mono, monospace', fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : String(v)} />
                 <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any) => [v.toLocaleString(), 'tokens']} />
-                <Bar dataKey="tokens" radius={[3, 3, 0, 0]}>
-                  {tokenTrend.map((_, i) => (
-                    <Cell key={i} fill="#f5e642" fillOpacity={i === tokenTrend.length - 1 ? 0.9 : 0.4} />
-                  ))}
-                </Bar>
+                <Bar dataKey="tokens" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
