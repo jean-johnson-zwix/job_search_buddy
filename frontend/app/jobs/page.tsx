@@ -19,8 +19,11 @@ export default function JobsPage() {
       const [r1, r2] = await Promise.all([fetch('/api/jobs'), fetch('/api/jobs/applied')])
       if (!r1.ok || !r2.ok) throw new Error('Failed to fetch jobs')
       const [ta, ap] = await Promise.all([r1.json(), r2.json()])
-      setToApply(ta)
-      setApplied(ap)
+      const byScore = (a: any, b: any) =>
+        Number(b.skill_fit ?? 0) - Number(a.skill_fit ?? 0) ||
+        Number(b.final_score ?? 0) - Number(a.final_score ?? 0)
+      setToApply([...ta].sort(byScore))
+      setApplied([...ap].sort(byScore))
     } catch (e: any) {
       setError(e.message)
     } finally {

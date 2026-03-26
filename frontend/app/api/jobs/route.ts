@@ -15,7 +15,8 @@ export async function GET() {
       )
     `)
     .in('status', ['new', 'reviewing'])
-    .order('final_score', { ascending: false })
+    .order('skill_fit',   { ascending: false, nullsFirst: false })
+    .order('final_score', { ascending: false, nullsFirst: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
