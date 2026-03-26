@@ -260,6 +260,22 @@ _NON_US_SIGNALS = [
     r"\bAustralia\b", r"\bBrazil\b",
     r"\bEMEA\b", r"\bAPAC\b", r"\bLATAM\b",
     r"Mexico\b",
+    # China
+    r"\bChina\b", r"\bChinese\b",
+    r"Beijing", r"Shanghai", r"Shenzhen", r"Guangzhou", r"Hangzhou",
+    r"Chengdu", r"Wuhan", r"Xi'an", r"Nanjing", r"Suzhou",
+    # Other Asia-Pacific
+    r"\bKorea\b", r"\bSeoul\b", r"Taipei", r"\bTaiwan\b",
+    r"Hong Kong", r"\bHK\b", r"Jakarta", r"\bIndonesia\b",
+    r"Kuala Lumpur", r"\bMalaysia\b", r"Bangkok", r"\bThailand\b",
+    r"Ho Chi Minh", r"Hanoi", r"\bVietnam\b",
+    # Middle East
+    r"Dubai", r"Abu Dhabi", r"\bUAE\b", r"Tel Aviv", r"\bIsrael\b",
+    r"Riyadh", r"\bSaudi\b",
+    # Eastern Europe
+    r"Warsaw", r"\bPoland\b", r"Prague", r"\bCzech\b",
+    r"Budapest", r"\bHungary\b", r"Kyiv", r"\bUkraine\b",
+    r"Moscow", r"\bRussia\b",
 ]
 
 _UNKNOWN_EXACT = {"", "n/a", "na", "location", "null", "tbd", "remote-us/ca"}
