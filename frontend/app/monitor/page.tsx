@@ -33,6 +33,7 @@ const PROVIDER_COLOR: Record<string, string> = {
   gemini:     '#f5e642',
   groq:       '#8fbf8a',
   openrouter: '#a899e6',
+  cerebras:   '#f0a070',
 }
 
 const TOOLTIP_STYLE = {

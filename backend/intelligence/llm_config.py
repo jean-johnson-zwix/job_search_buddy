@@ -2,13 +2,14 @@ from typing import Dict, Any, List, Tuple
 
 # LLM Task Directory
 RESUME_SKILL_EXTRACTION = "resume_skill_extraction"
-RESUME_CONDENSATION = "resume_condensation"
-JOB_SKILL_EXTRACTION = "job_skill_extraction"
-JOB_RESUME_MATCH = "job_resume_match"
+RESUME_CONDENSATION     = "resume_condensation"
+JOB_SKILL_EXTRACTION    = "job_skill_extraction"
+JOB_RESUME_MATCH        = "job_resume_match"
 
 PROVIDER_TIMEOUTS = {
     "gemini":     30,
     "groq":       30,
+    "cerebras":   30,
     "openrouter": 90,
 }
 
@@ -16,26 +17,27 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
     RESUME_SKILL_EXTRACTION: {
         "description": "Strict JSON skill extraction from resume text",
         "provider": "gemini",
-        "model": "gemini-3.1-flash-lite-preview",
+        "model":    "gemini-3.1-flash-lite-preview",
         "fallbacks": [
             ("groq",       "qwen/qwen3-32b"),
-            ("openrouter", "z-ai/glm-4.5-air:free"),
+            ("cerebras",   "qwen-3-32b"),
+            ("openrouter", "deepseek/deepseek-v3:free"),
         ],
-        "max_tokens": 2048,
-        "temperature": 0.0,
+        "max_tokens":      2048,
+        "temperature":     0.0,
         "response_format": "json",
     },
     RESUME_CONDENSATION: {
         "description": "Plain-text candidate profile condensation from resume text",
         "provider": "gemini",
-        "model": "gemini-3.1-flash-lite-preview",
+        "model":    "gemini-3.1-flash-lite-preview",
         "fallbacks": [
             ("groq",       "qwen/qwen3-32b"),
-            ("openrouter", "microsoft/phi-4:free"),
-            ("openrouter", "mistralai/mistral-7b-instruct:free"),
+            ("cerebras",   "llama-3.3-70b"),
+            ("openrouter", "mistralai/mistral-small-3.1-24b-instruct:free"),
         ],
-        "max_tokens": 1200,
-        "temperature": 0.2,
+        "max_tokens":      1200,
+        "temperature":     0.2,
         "response_format": "text",
     },
     JOB_SKILL_EXTRACTION: {
@@ -44,7 +46,8 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "model":       "gemini-3.1-flash-lite-preview",
         "fallbacks": [
             ("groq",       "llama-3.3-70b-versatile"),
-            ("openrouter", "z-ai/glm-4.5-air:free"),
+            ("cerebras",   "llama-3.3-70b"),
+            ("openrouter", "deepseek/deepseek-v3:free"),
         ],
         "max_tokens":      2048,
         "temperature":     0.0,
@@ -56,6 +59,7 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "model":       "minimax/minimax-m2.5:free",
         "fallbacks": [
             ("openrouter", "meta-llama/llama-3.3-70b-instruct:free"),
+            ("cerebras",   "llama-3.3-70b"),
             ("gemini",     "gemini-3.1-flash-lite-preview"),
             ("groq",       "llama-3.3-70b-versatile"),
         ],

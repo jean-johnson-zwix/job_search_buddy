@@ -27,6 +27,7 @@ class LLMClient:
         self.gemini_api_key = os.getenv("GEMINI_API_KEY")
         self.openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
         self.groq_api_key = os.getenv("GROQ_API_KEY")
+        self.cerebras_api_key = os.getenv("CEREBRAS_API_KEY")
         self.timeout = 30
         self.max_retries = 2
         self.retry_base_delay = 1.0
@@ -54,6 +55,10 @@ class LLMClient:
             )
         if provider == "groq":
             return self._call_groq(
+                system_prompt, user_prompt, model, response_format, max_tokens, temperature
+            )
+        if provider == "cerebras":
+            return self._call_cerebras(
                 system_prompt, user_prompt, model, response_format, max_tokens, temperature
             )
 
@@ -285,6 +290,51 @@ class LLMClient:
         }
 
         timeout = PROVIDER_TIMEOUTS.get("groq", 30)
+        r = httpx.post(url, json=payload, headers=headers, timeout=timeout)
+        r.raise_for_status()
+        data = r.json()
+        usage = data.get("usage", {})
+        self._last_usage = {
+            "prompt_tokens":     usage.get("prompt_tokens", 0),
+            "completion_tokens": usage.get("completion_tokens", 0),
+            "total_tokens":      usage.get("total_tokens", 0),
+        }
+        content = data["choices"][0]["message"]["content"]
+        if not content:
+            raise ValueError(f"Empty response content from {model}")
+        return content
+
+    def _call_cerebras(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model: str,
+        response_format: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> str:
+        if not self.cerebras_api_key:
+            raise ValueError("CEREBRAS_API_KEY not set")
+
+        url = "https://api.cerebras.ai/v1/chat/completions"
+        payload: Dict[str, Any] = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user",   "content": user_prompt},
+            ],
+            "temperature": temperature,
+            "max_tokens":  max_tokens,
+        }
+        if response_format == "json":
+            payload["response_format"] = {"type": "json_object"}
+
+        headers = {
+            "Authorization": f"Bearer {self.cerebras_api_key}",
+            "Content-Type":  "application/json",
+        }
+
+        timeout = PROVIDER_TIMEOUTS.get("cerebras", 30)
         r = httpx.post(url, json=payload, headers=headers, timeout=timeout)
         r.raise_for_status()
         data = r.json()
