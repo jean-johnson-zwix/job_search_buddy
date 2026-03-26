@@ -10,18 +10,19 @@ PROVIDER_TIMEOUTS = {
     "gemini":     30,
     "groq":       30,
     "cerebras":   30,
+    "sambanova":  60,
     "openrouter": 90,
 }
 
 LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
     RESUME_SKILL_EXTRACTION: {
         "description": "Strict JSON skill extraction from resume text",
-        "provider": "gemini",
-        "model":    "gemini-3.1-flash-lite-preview",
+        "provider": "sambanova",
+        "model":    "Meta-Llama-4-Maverick-17B-128E-Instruct",
         "fallbacks": [
-            ("groq",       "qwen/qwen3-32b"),
+            ("gemini",     "gemini-3.1-flash-lite-preview"),
+            ("groq",       "llama-3.3-70b-versatile"),
             ("cerebras",   "gpt-oss-120b"),
-            ("openrouter", "meta-llama/llama-3.3-70b-instruct:free"),
         ],
         "max_tokens":      2048,
         "temperature":     0.0,
@@ -29,12 +30,12 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
     },
     RESUME_CONDENSATION: {
         "description": "Plain-text candidate profile condensation from resume text",
-        "provider": "gemini",
-        "model":    "gemini-3.1-flash-lite-preview",
+        "provider": "cerebras",
+        "model":    "gpt-oss-120b",
         "fallbacks": [
+            ("sambanova",  "Qwen3-32B"),
+            ("gemini",     "gemini-3.1-flash-lite-preview"),
             ("groq",       "qwen/qwen3-32b"),
-            ("cerebras",   "gpt-oss-120b"),
-            ("openrouter", "mistralai/mistral-small-3.1-24b-instruct:free"),
         ],
         "max_tokens":      1200,
         "temperature":     0.2,
@@ -42,12 +43,12 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
     },
     JOB_SKILL_EXTRACTION: {
         "description": "Extract role_type, seniority, years_required, skills[] from a JD",
-        "provider":    "gemini",
-        "model":       "gemini-3.1-flash-lite-preview",
+        "provider":    "sambanova",
+        "model":       "Qwen3-32B",
         "fallbacks": [
+            ("gemini",     "gemini-3.1-flash-lite-preview"),
             ("groq",       "llama-3.3-70b-versatile"),
             ("cerebras",   "gpt-oss-120b"),
-            ("openrouter", "meta-llama/llama-3.3-70b-instruct:free"),
         ],
         "max_tokens":      2048,
         "temperature":     0.0,
@@ -55,11 +56,10 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
     },
     JOB_RESUME_MATCH: {
         "description": "Score skill_fit, role_fit, experience_fit against candidate profile",
-        "provider":    "openrouter",
-        "model":       "minimax/minimax-m2.5:free",
+        "provider":    "sambanova",
+        "model":       "Qwen3-235B-A22B",
         "fallbacks": [
-            ("openrouter", "meta-llama/llama-3.3-70b-instruct:free"),
-            ("cerebras",   "gpt-oss-120b"),
+            ("sambanova",  "Qwen3-32B"),
             ("gemini",     "gemini-3.1-flash-lite-preview"),
             ("groq",       "llama-3.3-70b-versatile"),
         ],
