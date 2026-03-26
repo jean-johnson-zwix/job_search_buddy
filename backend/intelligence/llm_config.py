@@ -22,9 +22,9 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "fallbacks": [
             ("gemini",     "gemini-3.1-flash-lite-preview"),
             ("groq",       "llama-3.3-70b-versatile"),
-            ("cerebras",   "llama3.1-8b"),
+            ("cerebras",   "qwen-3-235b-a22b-instruct-2507"),
         ],
-        "max_tokens":      2048,
+        "max_tokens":      4096,
         "temperature":     0.0,
         "response_format": "json",
     },
@@ -48,7 +48,7 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "fallbacks": [
             ("gemini",     "gemini-3.1-flash-lite-preview"),
             ("groq",       "llama-3.3-70b-versatile"),
-            ("cerebras",   "llama3.1-8b"),
+            ("cerebras",   "qwen-3-235b-a22b-instruct-2507"),
         ],
         "max_tokens":      4096,
         "temperature":     0.0,
