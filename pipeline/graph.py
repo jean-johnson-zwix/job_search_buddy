@@ -18,7 +18,7 @@ from pipeline.state import PipelineState
 
 logger = logging.getLogger(__name__)
 
-DELAY_SEC=4 # avoid RQM limits
+DELAY_SEC = 4  # avoid RQM limits
 
 #node 1: load resume + extract skills
 @log_methods
@@ -73,7 +73,7 @@ def node_job_ingestion(state: PipelineState) -> dict:
         if not raw_jobs:
             logger.info("no new jobs")
             continue
-        # filter jobs based on location + title
+        # filter jobs based on location, title, freshness, and sponsorship
         relevant = filter_jobs(raw_jobs, company["name"])
         if not relevant:
             continue

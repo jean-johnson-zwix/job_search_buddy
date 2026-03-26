@@ -1,7 +1,46 @@
 import re
 import logging
+from datetime import datetime, timezone, timedelta
 
 logger = logging.getLogger(__name__)
+
+STALE_DAYS = 30
+
+_SPONSORSHIP_DENIAL_RE = re.compile(
+    r"no sponsorship"
+    r"|no visa sponsorship"
+    r"|will not provide sponsorship"
+    r"|sponsorship is not available"
+    r"|must be authorized to work in the US without sponsorship"
+    r"|authorization to work in the United States without employer sponsorship"
+    r"|not able to provide sponsorship"
+    r"|candidates who do not require sponsorship"
+    r"|without current or future sponsorship",
+    re.IGNORECASE,
+)
+
+
+def is_fresh(job: dict) -> bool:
+    """Return True if posted_at is within STALE_DAYS, or None/missing, or unparseable."""
+    posted_at = job.get("posted_at")
+    if not posted_at:
+        return True
+    try:
+        dt = datetime.fromisoformat(posted_at)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        cutoff = datetime.now(tz=timezone.utc) - timedelta(days=STALE_DAYS)
+        return dt >= cutoff
+    except Exception:
+        return True
+
+
+def requires_sponsorship_denial(job: dict) -> bool:
+    """Return True if the job description explicitly denies visa sponsorship."""
+    description = job.get("description") or ""
+    if not description:
+        return False
+    return bool(_SPONSORSHIP_DENIAL_RE.search(description))
 
 EXCLUDE_SENIORITY = [
     r"\bstaff\b",
@@ -252,13 +291,23 @@ def filter_jobs(jobs: list[dict], company_name: str) -> list[dict]:
     loc_dropped = len(jobs) - len(us_jobs)
 
     # stage 2: title relevance
-    kept = [j for j in us_jobs if is_relevant(j.get("title", ""))]
-    title_dropped = len(us_jobs) - len(kept)
+    title_kept = [j for j in us_jobs if is_relevant(j.get("title", ""))]
+    title_dropped = len(us_jobs) - len(title_kept)
+
+    # stage 3: freshness
+    fresh = [j for j in title_kept if is_fresh(j)]
+    stale_dropped = len(title_kept) - len(fresh)
+
+    # stage 4: sponsorship denial
+    eligible = [j for j in fresh if not requires_sponsorship_denial(j)]
+    sponsor_dropped = len(fresh) - len(eligible)
 
     logger.info(
         f"  {company_name}: {len(jobs)} total → "
-        f"{loc_dropped} non-US dropped → "
-        f"{title_dropped} irrelevant title dropped → "
-        f"{len(kept)} kept"
+        f"{loc_dropped} non-US → "
+        f"{title_dropped} irrelevant title → "
+        f"{stale_dropped} stale → "
+        f"{sponsor_dropped} no-sponsorship → "
+        f"{len(eligible)} eligible"
     )
-    return kept
+    return eligible
