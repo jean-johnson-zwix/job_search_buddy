@@ -20,8 +20,8 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "model":    "gemini-3.1-flash-lite-preview",
         "fallbacks": [
             ("groq",       "qwen/qwen3-32b"),
-            ("cerebras",   "qwen-3-32b"),
-            ("openrouter", "deepseek/deepseek-v3:free"),
+            ("cerebras",   "gpt-oss-120b"),
+            ("openrouter", "meta-llama/llama-3.3-70b-instruct:free"),
         ],
         "max_tokens":      2048,
         "temperature":     0.0,
@@ -33,7 +33,7 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "model":    "gemini-3.1-flash-lite-preview",
         "fallbacks": [
             ("groq",       "qwen/qwen3-32b"),
-            ("cerebras",   "llama-3.3-70b"),
+            ("cerebras",   "gpt-oss-120b"),
             ("openrouter", "mistralai/mistral-small-3.1-24b-instruct:free"),
         ],
         "max_tokens":      1200,
@@ -46,8 +46,8 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "model":       "gemini-3.1-flash-lite-preview",
         "fallbacks": [
             ("groq",       "llama-3.3-70b-versatile"),
-            ("cerebras",   "llama-3.3-70b"),
-            ("openrouter", "deepseek/deepseek-v3:free"),
+            ("cerebras",   "gpt-oss-120b"),
+            ("openrouter", "meta-llama/llama-3.3-70b-instruct:free"),
         ],
         "max_tokens":      2048,
         "temperature":     0.0,
@@ -59,7 +59,7 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "model":       "minimax/minimax-m2.5:free",
         "fallbacks": [
             ("openrouter", "meta-llama/llama-3.3-70b-instruct:free"),
-            ("cerebras",   "llama-3.3-70b"),
+            ("cerebras",   "gpt-oss-120b"),
             ("gemini",     "gemini-3.1-flash-lite-preview"),
             ("groq",       "llama-3.3-70b-versatile"),
         ],

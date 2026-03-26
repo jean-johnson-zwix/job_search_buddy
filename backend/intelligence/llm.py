@@ -1,5 +1,6 @@
 import os
 import time
+import random
 import logging
 from typing import Optional, Dict, Any, List, Tuple
 from .llm_config import get_llm_task_config, PROVIDER_TIMEOUTS
@@ -11,6 +12,7 @@ OPENROUTER_JSON_SUPPORTED_MODELS = {
     "deepseek/deepseek-r1:free",
     "google/gemini-2.0-flash-001:free",
     "minimax/minimax-m2.5:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
 }
 
 
@@ -145,16 +147,11 @@ class LLMClient:
                 if attempt >= self.max_retries:
                     raise
 
-                delay = self.retry_base_delay * (2 ** attempt)
+                cap = 30.0
+                delay = random.uniform(0, min(cap, self.retry_base_delay * (2 ** attempt)))
                 logger.warning(
-                    "Retryable LLM error, backing off before retry",
-                    extra={
-                        "provider": provider,
-                        "model": model,
-                        "attempt": attempt + 1,
-                        "delay_seconds": delay,
-                        "error": repr(e),
-                    },
+                    "Retryable LLM error [%s/%s], backing off %.2fs before retry (attempt %d): %s",
+                    provider, model, delay, attempt + 1, repr(e),
                 )
                 time.sleep(delay)
 
