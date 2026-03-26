@@ -134,7 +134,8 @@ def node_job_extraction(state: PipelineState) -> dict:
                 job.get("description", "")
             )
             call_count += 1
-            time.sleep(DELAY_SEC)   # rate limit
+            logger.info("Sleeping %ss (rate limit)", DELAY_SEC)
+            time.sleep(DELAY_SEC)
 
             if result:
                 job["role_type"]      = result.get("role_type", "Other")
@@ -191,7 +192,8 @@ def node_job_match(state: PipelineState) -> dict:
                 job["title"],
                 job.get("description", ""),
             )
-            time.sleep(DELAY_SEC)   # rate limit
+            logger.info("Sleeping %ss (rate limit)", DELAY_SEC)
+            time.sleep(DELAY_SEC)
 
             if not result:
                 logger.warning(f"match_resume_to_job returned None for '{job['title']}'")

@@ -98,12 +98,8 @@ class LLMClient:
             except Exception as e:
                 errors.append(f"{current_provider}/{current_model}: {repr(e)}")
                 logger.warning(
-                    "LLM attempt failed, trying next fallback if available",
-                    extra={
-                        "provider": current_provider,
-                        "model": current_model,
-                        "error": repr(e),
-                    },
+                    "LLM attempt failed [%s/%s]: %s — trying next fallback if available",
+                    current_provider, current_model, repr(e),
                 )
 
         raise RuntimeError(

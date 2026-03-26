@@ -18,9 +18,8 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "provider": "gemini",
         "model": "gemini-3.1-flash-lite-preview",
         "fallbacks": [
-            ("groq", "llama-3.3-70b-versatile"),
-            ("openrouter", "deepseek/deepseek-v3:free"),
-            ("openrouter", "google/gemini-2.0-flash-001:free"),
+            ("groq",       "qwen/qwen3-32b"),
+            ("openrouter", "z-ai/glm-4.5-air:free"),
         ],
         "max_tokens": 2048,
         "temperature": 0.0,
@@ -45,7 +44,7 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "model":       "gemini-3.1-flash-lite-preview",
         "fallbacks": [
             ("groq",       "llama-3.3-70b-versatile"),
-            ("openrouter", "deepseek/deepseek-v3:free"),
+            ("openrouter", "z-ai/glm-4.5-air:free"),
         ],
         "max_tokens":      2048,
         "temperature":     0.0,
@@ -53,11 +52,11 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
     },
     JOB_RESUME_MATCH: {
         "description": "Score skill_fit, role_fit, experience_fit against candidate profile",
-        "provider":    "groq",
-        "model":       "deepseek-r1-distill-llama-70b",
+        "provider":    "openrouter",
+        "model":       "deepseek/deepseek-r1:free",
         "fallbacks": [
-            ("openrouter", "deepseek/deepseek-r1:free"),
-            ("gemini",     "gemini-2.5-flash-preview"),
+            ("groq",   "deepseek-r1-distill-llama-70b"),
+            ("gemini", "gemini-2.5-flash-preview"),
         ],
         "max_tokens":      4096,
         "temperature":     0.1,
