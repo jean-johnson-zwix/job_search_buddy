@@ -2,3 +2,6 @@ __pycache__/
 INSTRUCTIONS.md
 CLAUDE.md
 .claude
+CHROME_PLUGIN*
+PORTFOLIO*
+docs/*
