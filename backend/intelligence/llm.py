@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 OPENROUTER_JSON_SUPPORTED_MODELS = {
     "deepseek/deepseek-r1:free",
     "google/gemini-2.0-flash-001:free",
+    "minimax/minimax-m2.5:free",
 }
+
 
 GROQ_JSON_SUPPORTED_MODELS = {
     "llama-3.3-70b-versatile",

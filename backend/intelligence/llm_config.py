@@ -53,10 +53,11 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
     JOB_RESUME_MATCH: {
         "description": "Score skill_fit, role_fit, experience_fit against candidate profile",
         "provider":    "openrouter",
-        "model":       "deepseek/deepseek-r1:free",
+        "model":       "minimax/minimax-m2.5:free",
         "fallbacks": [
-            ("groq",   "deepseek-r1-distill-llama-70b"),
-            ("gemini", "gemini-2.5-flash-preview"),
+            ("openrouter", "meta-llama/llama-3.3-70b-instruct:free"),
+            ("gemini",     "gemini-3.1-flash-lite-preview"),
+            ("groq",       "llama-3.3-70b-versatile"),
         ],
         "max_tokens":      4096,
         "temperature":     0.1,
