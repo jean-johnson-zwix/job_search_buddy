@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Outfit:wght@300;400;500&display=swap');
+
+@import "tailwindcss";
+
+:root {
+  --bg-dark:        #0e0e0e;
+  --bg-card:        #141414;
+  --bg-surface:     #181818;
+  --border:         rgba(255, 255, 255, 0.07);
+  --border-hover:   rgba(255, 255, 255, 0.16);
+  --yellow:         #f5e642;
+  --pink:           #f06faa;
+  --sage:           #8fbf8a;
+  --lavender:       #a899e6;
+  --cream:          #f0ead6;
+  --sand:           #c8bfa8;
+  --text-primary:   #f0ead6;
+  --text-secondary: #807870;
+  --text-muted:     #66665e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 300;
+  line-height: 1.7;
+}
+
+.font-mono {
+  font-family: 'DM Mono', monospace;
+}
+
+.font-serif {
+  font-family: Georgia, serif;
+}

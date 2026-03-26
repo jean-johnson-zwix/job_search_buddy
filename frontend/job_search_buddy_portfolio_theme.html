@@ -1,0 +1,484 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-dark:#0e0e0e;
+  --bg-card:#141414;
+  --bg-surface:#181818;
+  --border:rgba(255,255,255,0.07);
+  --border-hover:rgba(255,255,255,0.16);
+  --yellow:#f5e642;
+  --pink:#f06faa;
+  --sage:#8fbf8a;
+  --lavender:#a899e6;
+  --cream:#f0ead6;
+  --sand:#c8bfa8;
+  --text-primary:#f0ead6;
+  --text-secondary:#807870;
+  --text-muted:#66665e;
+}
+body{font-family:'Outfit',sans-serif;background:var(--bg-dark);color:var(--text-primary);font-weight:300;line-height:1.7}
+
+/* NAV */
+.nav{background:rgba(14,14,14,0.95);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:52px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-name{font-family:Georgia,serif;font-size:15px;font-style:italic;color:var(--cream);letter-spacing:-0.01em}
+.brand-name span{color:var(--yellow);font-style:normal}
+.nav-links{display:flex;gap:2px}
+.nav-btn{background:none;border:none;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:6px 14px;border-radius:4px;cursor:pointer;color:var(--text-secondary);transition:color 0.2s}
+.nav-btn.active{background:var(--yellow);color:var(--bg-dark);font-weight:600}
+.nav-btn:hover:not(.active){color:var(--cream)}
+.nav-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase}
+
+.content{padding:20px;background:var(--bg-dark);min-height:550px}
+.page{display:none}
+.page.active{display:block}
+
+/* STAT STRIP */
+.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color 0.2s}
+.stat-card:hover{border-color:var(--border-hover)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc-y::before{background:var(--yellow)}
+.sc-s::before{background:var(--sage)}
+.sc-p::before{background:var(--pink)}
+.sc-l::before{background:var(--lavender)}
+.stat-val{font-size:26px;font-weight:300;color:var(--cream);line-height:1}
+.sc-y .stat-val{color:var(--yellow)}
+.sc-s .stat-val{color:var(--sage)}
+.sc-p .stat-val{color:var(--pink)}
+.sc-l .stat-val{color:var(--lavender)}
+.stat-lbl{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin-top:5px}
+
+/* TABS */
+.tab-bar{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}
+.tab{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:8px 16px;cursor:pointer;color:var(--text-muted);transition:all 0.2s}
+.tab.active{border-bottom-color:var(--yellow);color:var(--yellow)}
+.tab:hover:not(.active){color:var(--cream)}
+.tab-badge{margin-left:6px;font-size:10px;opacity:0.6}
+.tab-ct{display:none;flex-direction:column;gap:10px}
+.tab-ct.active{display:flex}
+
+/* JOB CARDS */
+.jcard{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;transition:border-color 0.3s,transform 0.3s}
+.jcard:hover{border-color:var(--border-hover);transform:translateY(-2px)}
+.acc-y{border-left:2px solid var(--yellow)}
+.acc-s{border-left:2px solid var(--sage)}
+.acc-l{border-left:2px solid var(--lavender)}
+.acc-p{border-left:2px solid var(--pink)}
+
+.jhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.jmeta{flex:1;min-width:0}
+.rank-tag{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:0.08em;margin-right:6px}
+.jtitle{font-size:14px;font-weight:400;color:var(--cream)}
+.jsub{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:5px}
+.coname{font-size:13px;font-weight:400;color:var(--sand)}
+.sep{color:var(--text-muted);font-size:11px}
+.mtxt{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:0.04em}
+
+.badge{display:inline-flex;padding:2px 8px;border-radius:3px;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border:1px solid}
+.bf{color:var(--yellow);border-color:rgba(245,230,66,0.25);background:rgba(245,230,66,0.06)}
+.bu{color:var(--lavender);border-color:rgba(168,153,230,0.25);background:rgba(168,153,230,0.06)}
+.bs{color:var(--sage);border-color:rgba(143,191,138,0.25);background:rgba(143,191,138,0.06)}
+
+.sring{width:52px;height:52px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;border:1px solid}
+.sr-hi{border-color:rgba(143,191,138,0.3);background:rgba(143,191,138,0.06)}
+.sr-md{border-color:rgba(245,230,66,0.3);background:rgba(245,230,66,0.06)}
+.sr-lo{border-color:rgba(240,111,170,0.3);background:rgba(240,111,170,0.06)}
+.sn{font-size:14px;font-weight:300;line-height:1}
+.sn.hi{color:var(--sage)}
+.sn.md{color:var(--yellow)}
+.sn.lo{color:var(--pink)}
+.slbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;margin-top:1px}
+
+.spills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.sp{display:inline-flex;padding:2px 9px;border-radius:3px;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;border:1px solid;letter-spacing:0.04em}
+.sp.hi{color:var(--sage);border-color:rgba(143,191,138,0.2);background:rgba(143,191,138,0.05)}
+.sp.md{color:var(--yellow);border-color:rgba(245,230,66,0.2);background:rgba(245,230,66,0.05)}
+.sp.lo{color:var(--pink);border-color:rgba(240,111,170,0.2);background:rgba(240,111,170,0.05)}
+
+.gtag{font-family:'DM Mono',monospace;font-size:10px;color:var(--sage);background:rgba(143,191,138,0.06);border:1px solid rgba(143,191,138,0.2);padding:2px 8px;border-radius:3px;display:inline-block;margin-bottom:4px;letter-spacing:0.04em}
+.rtag{font-family:'DM Mono',monospace;font-size:10px;color:var(--pink);background:rgba(240,111,170,0.06);border:1px solid rgba(240,111,170,0.2);padding:2px 8px;border-radius:3px;display:inline-block;letter-spacing:0.04em}
+.summary{font-size:12px;color:var(--text-secondary);border-left:2px solid var(--border);padding:5px 10px;margin:8px 0;font-style:italic;background:var(--bg-surface);border-radius:0 4px 4px 0}
+
+.jfoot{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+select{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.04em;border:1px solid var(--border);border-radius:4px;padding:5px 10px;background:var(--bg-surface);color:var(--sand);cursor:pointer}
+select:hover{border-color:var(--border-hover)}
+.abtn{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;background:var(--yellow);color:var(--bg-dark);border:none;padding:6px 16px;border-radius:4px;cursor:pointer;font-weight:600;transition:opacity 0.2s}
+.abtn:hover{opacity:0.85}
+
+/* SKILLS PAGE */
+.sgrid{display:grid;grid-template-columns:1fr;gap:14px}
+.scard{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;transition:border-color 0.2s}
+.scard:hover{border-color:var(--border-hover)}
+.sec-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--yellow);display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.sec-label.lv{color:var(--lavender)}
+.sec-label.sg{color:var(--sage)}
+.stitle{font-family:Georgia,serif;font-size:16px;font-weight:300;font-style:italic;color:var(--cream);margin-bottom:14px}
+.ssub{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:0.06em;margin-bottom:12px}
+
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.bar-lbl{font-family:'DM Mono',monospace;font-size:11px;width:96px;text-align:right;flex-shrink:0;color:var(--text-secondary)}
+.bar-track{flex:1;height:6px;background:var(--bg-surface);border-radius:3px;overflow:hidden;border:1px solid var(--border)}
+.bh{height:100%;border-radius:3px;background:var(--sage)}
+.bg2{height:100%;border-radius:3px;background:var(--pink)}
+.bar-pct{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);width:30px}
+
+.leg{display:flex;gap:14px;margin-bottom:10px}
+.li{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-secondary);letter-spacing:0.04em}
+.ld{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+.gtbl{width:100%;border-collapse:collapse}
+.gtbl th{text-align:left;padding:6px 8px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);font-weight:400;border-bottom:1px solid var(--border);letter-spacing:0.08em;text-transform:uppercase}
+.gtbl td{padding:8px 8px;border-bottom:1px solid var(--border);font-size:13px;color:var(--sand)}
+.shave{color:var(--sage);border:1px solid rgba(143,191,138,0.25);background:rgba(143,191,138,0.06);padding:2px 8px;border-radius:3px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.04em}
+.sadj{color:var(--yellow);border:1px solid rgba(245,230,66,0.25);background:rgba(245,230,66,0.06);padding:2px 8px;border-radius:3px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.04em}
+.sgap{color:var(--pink);border:1px solid rgba(240,111,170,0.25);background:rgba(240,111,170,0.06);padding:2px 8px;border-radius:3px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.04em}
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+
+<div class="nav">
+  <div class="brand">
+    <span class="brand-name">Job Search <span>Buddy</span></span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-btn active" onclick="showPage('jobs',this)">Jobs</button>
+    <button class="nav-btn" onclick="showPage('skills',this)">Skills</button>
+  </div>
+  <span class="nav-time">Mar 25 · 7:02 AM</span>
+</div>
+
+<div class="content">
+
+<div class="page active" id="page-jobs">
+  <div class="stat-strip">
+    <div class="stat-card sc-y"><div class="stat-val">22</div><div class="stat-lbl">Jobs today</div></div>
+    <div class="stat-card sc-s"><div class="stat-val">5</div><div class="stat-lbl">To apply</div></div>
+    <div class="stat-card sc-p"><div class="stat-val">2</div><div class="stat-lbl">In progress</div></div>
+    <div class="stat-card sc-l"><div class="stat-val">88%</div><div class="stat-lbl">Top match</div></div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="showTab('ta',this)">To Apply<span class="tab-badge" id="badge">5</span></button>
+    <button class="tab" onclick="showTab('ap',this)">Applied<span class="tab-badge">2</span></button>
+  </div>
+
+  <div class="tab-ct active" id="tab-ta">
+    <div class="jcard acc-y" id="j1">
+      <div class="jhead">
+        <div class="jmeta">
+          <div style="margin-bottom:5px">
+            <span class="rank-tag">01 —</span><span class="jtitle">Backend Engineer, AI Platform</span>
+          </div>
+          <div class="jsub">
+            <span class="coname">Stripe</span><span class="badge bf">FAANG</span>
+            <span class="sep">·</span><span class="mtxt">Senior</span>
+            <span class="sep">·</span><span class="mtxt">Remote</span>
+            <span class="sep">·</span><span class="mtxt">Mar 19</span>
+          </div>
+        </div>
+        <div class="sring sr-hi"><span class="sn hi">88%</span><span class="slbl">skill</span></div>
+      </div>
+      <div class="spills">
+        <span class="sp hi">role: 92%</span><span class="sp hi">exp: 80%</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);align-self:center;letter-spacing:0.04em">final: 0.82</span>
+      </div>
+      <div style="margin-bottom:6px;display:flex;flex-wrap:wrap;gap:5px">
+        <span class="gtag">✓ RAG pipelines · distributed systems</span>
+        <span class="rtag">⚠ Go · gRPC</span>
+      </div>
+      <div class="summary">Strong backend and GenAI fit with production AWS experience. Primary gap is Go which is listed as preferred not required.</div>
+      <div class="jfoot">
+        <select onchange="removeJob('j1',this.value)"><option>New</option><option>Reviewing</option><option>Applied</option><option>Ignore</option></select>
+        <button class="abtn">Apply →</button>
+      </div>
+    </div>
+
+    <div class="jcard acc-s" id="j2">
+      <div class="jhead">
+        <div class="jmeta">
+          <div style="margin-bottom:5px"><span class="rank-tag">02 —</span><span class="jtitle">Software Engineer, GenAI</span></div>
+          <div class="jsub">
+            <span class="coname">Linear</span><span class="badge bs">Startup</span>
+            <span class="sep">·</span><span class="mtxt">Mid</span>
+            <span class="sep">·</span><span class="mtxt">Remote</span>
+            <span class="sep">·</span><span class="mtxt">Mar 18</span>
+          </div>
+        </div>
+        <div class="sring sr-hi"><span class="sn hi">80%</span><span class="slbl">skill</span></div>
+      </div>
+      <div class="spills">
+        <span class="sp hi">role: 85%</span><span class="sp hi">exp: 100%</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);align-self:center;letter-spacing:0.04em">final: 0.76</span>
+      </div>
+      <div style="margin-bottom:6px">
+        <span class="gtag">✓ LLM pipelines · greenfield · RAG</span>
+      </div>
+      <div class="summary">Excellent GenAI stack alignment with no hard gaps. Greenfield startup environment suits the candidate.</div>
+      <div class="jfoot">
+        <select onchange="removeJob('j2',this.value)"><option>New</option><option>Reviewing</option><option>Applied</option><option>Ignore</option></select>
+        <button class="abtn">Apply →</button>
+      </div>
+    </div>
+
+    <div class="jcard acc-y" id="j3">
+      <div class="jhead">
+        <div class="jmeta">
+          <div style="margin-bottom:5px"><span class="rank-tag">03 —</span><span class="jtitle">AI Engineer</span></div>
+          <div class="jsub">
+            <span class="coname">Cloudflare</span><span class="badge bf">FAANG</span>
+            <span class="sep">·</span><span class="mtxt">Senior</span>
+            <span class="sep">·</span><span class="mtxt">Austin, TX</span>
+            <span class="sep">·</span><span class="mtxt">Mar 17</span>
+          </div>
+        </div>
+        <div class="sring sr-md"><span class="sn md">72%</span><span class="slbl">skill</span></div>
+      </div>
+      <div class="spills">
+        <span class="sp md">role: 78%</span><span class="sp md">exp: 60%</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);align-self:center;letter-spacing:0.04em">final: 0.68</span>
+      </div>
+      <div style="margin-bottom:6px;display:flex;flex-wrap:wrap;gap:5px">
+        <span class="gtag">✓ distributed systems · API</span>
+        <span class="rtag">⚠ Rust · C++</span>
+      </div>
+      <div class="summary">Strong backend fit but experience bar is a stretch. Rust is a hard gap.</div>
+      <div class="jfoot">
+        <select onchange="removeJob('j3',this.value)"><option>New</option><option>Reviewing</option><option>Applied</option><option>Ignore</option></select>
+        <button class="abtn">Apply →</button>
+      </div>
+    </div>
+
+    <div class="jcard acc-l" id="j4">
+      <div class="jhead">
+        <div class="jmeta">
+          <div style="margin-bottom:5px"><span class="rank-tag">04 —</span><span class="jtitle">ML Engineer, LLM Infrastructure</span></div>
+          <div class="jsub">
+            <span class="coname">Notion</span><span class="badge bu">Unicorn</span>
+            <span class="sep">·</span><span class="mtxt">Mid</span>
+            <span class="sep">·</span><span class="mtxt">Remote</span>
+            <span class="sep">·</span><span class="mtxt">Mar 15</span>
+          </div>
+        </div>
+        <div class="sring sr-md"><span class="sn md">65%</span><span class="slbl">skill</span></div>
+      </div>
+      <div class="spills">
+        <span class="sp md">role: 70%</span><span class="sp hi">exp: 100%</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);align-self:center;letter-spacing:0.04em">final: 0.63</span>
+      </div>
+      <div style="margin-bottom:6px;display:flex;flex-wrap:wrap;gap:5px">
+        <span class="gtag">✓ RAG · LLM</span>
+        <span class="rtag">⚠ Spark · Flink</span>
+      </div>
+      <div class="summary">Good overall fit. Spark and Flink are gaps but listed as preferred only.</div>
+      <div class="jfoot">
+        <select onchange="removeJob('j4',this.value)"><option>New</option><option>Reviewing</option><option>Applied</option><option>Ignore</option></select>
+        <button class="abtn">Apply →</button>
+      </div>
+    </div>
+
+    <div class="jcard acc-p" id="j5">
+      <div class="jhead">
+        <div class="jmeta">
+          <div style="margin-bottom:5px"><span class="rank-tag">05 —</span><span class="jtitle">Research Engineer, ML Systems</span></div>
+          <div class="jsub">
+            <span class="coname">OpenAI</span><span class="badge bu">Unicorn</span>
+            <span class="sep">·</span><span class="mtxt">Senior</span>
+            <span class="sep">·</span><span class="mtxt">San Francisco</span>
+            <span class="sep">·</span><span class="mtxt">Mar 12</span>
+          </div>
+        </div>
+        <div class="sring sr-lo"><span class="sn lo">55%</span><span class="slbl">skill</span></div>
+      </div>
+      <div class="spills">
+        <span class="sp lo">role: 60%</span><span class="sp lo">exp: 50%</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);align-self:center;letter-spacing:0.04em">final: 0.52</span>
+      </div>
+      <div style="margin-bottom:6px;display:flex;flex-wrap:wrap;gap:5px">
+        <span class="gtag">✓ ML pipelines</span>
+        <span class="rtag">⚠ CUDA · C++ · PhD · 10+ yrs</span>
+      </div>
+      <div class="summary">Moderate fit — ML research focus doesn't align with production engineering background.</div>
+      <div class="jfoot">
+        <select onchange="removeJob('j5',this.value)"><option>New</option><option>Reviewing</option><option>Applied</option><option>Ignore</option></select>
+        <button class="abtn">Apply →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-ct" id="tab-ap">
+    <div class="jcard acc-y">
+      <div class="jhead">
+        <div class="jmeta">
+          <div style="margin-bottom:5px"><span class="rank-tag">01 —</span><span class="jtitle">Backend Engineer, Payments</span></div>
+          <div class="jsub">
+            <span class="coname">Stripe</span><span class="badge bf">FAANG</span>
+            <span class="sep">·</span>
+            <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--sage);border:1px solid rgba(143,191,138,0.2);padding:2px 8px;border-radius:3px;background:rgba(143,191,138,0.06);letter-spacing:0.04em">Applied Mar 18</span>
+          </div>
+        </div>
+        <div class="sring sr-hi"><span class="sn hi">84%</span><span class="slbl">skill</span></div>
+      </div>
+      <div class="summary">Strong backend fit. Applied after seeing the role at a meetup.</div>
+      <div class="jfoot">
+        <select><option>Applied</option><option>Interviewing</option><option>Rejected</option></select>
+        <button class="abtn">View JD →</button>
+      </div>
+    </div>
+    <div class="jcard acc-l">
+      <div class="jhead">
+        <div class="jmeta">
+          <div style="margin-bottom:5px"><span class="rank-tag">02 —</span><span class="jtitle">Software Engineer, Platform</span></div>
+          <div class="jsub">
+            <span class="coname">Vercel</span><span class="badge bu">Unicorn</span>
+            <span class="sep">·</span>
+            <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--yellow);border:1px solid rgba(245,230,66,0.2);padding:2px 8px;border-radius:3px;background:rgba(245,230,66,0.06);letter-spacing:0.04em">Interviewing</span>
+          </div>
+        </div>
+        <div class="sring sr-hi"><span class="sn hi">79%</span><span class="slbl">skill</span></div>
+      </div>
+      <div class="summary">Good TypeScript + cloud fit. Currently in round 2 technical interview.</div>
+      <div class="jfoot">
+        <select><option>Applied</option><option selected>Interviewing</option><option>Rejected</option></select>
+        <button class="abtn">View JD →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SKILLS PAGE -->
+<div class="page" id="page-skills">
+  <div class="stat-strip">
+    <div class="stat-card sc-y"><div class="stat-val">247</div><div class="stat-lbl">Jobs analyzed</div></div>
+    <div class="stat-card sc-s"><div class="stat-val">31</div><div class="stat-lbl">Skills in demand</div></div>
+    <div class="stat-card sc-p"><div class="stat-val">8</div><div class="stat-lbl">Skill gaps</div></div>
+    <div class="stat-card sc-l"><div class="stat-val" style="font-size:16px">LangChain</div><div class="stat-lbl">Fastest growing</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <select style="font-size:11px"><option>All roles</option><option>SWE</option><option>ML</option><option>DevOps</option></select>
+    <select style="font-size:11px"><option>All tiers</option><option>FAANG</option><option>Unicorn</option><option>Startup</option></select>
+  </div>
+
+  <div class="sgrid">
+    <div class="scard">
+      <div class="sec-label">Top skills this week</div>
+      <div class="stitle">What the market wants</div>
+      <div class="leg">
+        <div class="li"><div class="ld" style="background:var(--sage)"></div>You have it</div>
+        <div class="li"><div class="ld" style="background:var(--pink)"></div>Gap</div>
+      </div>
+      <div id="bars"></div>
+    </div>
+
+    <div class="scard">
+      <div class="sec-label lv">Trends</div>
+      <div class="stitle">Skill demand over time</div>
+      <div class="ssub">last 8 weeks · rising and falling demand</div>
+      <svg style="width:100%;height:130px" viewBox="0 0 580 130" id="tsvg"></svg>
+      <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap" id="tleg"></div>
+    </div>
+
+    <div class="scard">
+      <div class="sec-label sg">Gap analysis</div>
+      <div class="stitle">Skills to develop</div>
+      <div class="ssub">required in more than 5% of jobs this week</div>
+      <table class="gtbl">
+        <thead><tr><th>Skill</th><th>Demand</th><th>Status</th></tr></thead>
+        <tbody id="gtbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const SD=[
+  {skill:'Python',pct:78,have:true},{skill:'TypeScript',pct:65,have:true},
+  {skill:'AWS',pct:61,have:true},{skill:'Docker',pct:58,have:true},
+  {skill:'Kubernetes',pct:49,have:true},{skill:'Go',pct:44,have:false},
+  {skill:'LangChain',pct:38,have:true},{skill:'PostgreSQL',pct:36,have:true},
+  {skill:'Kafka',pct:31,have:false},{skill:'gRPC',pct:29,have:false},
+  {skill:'Rust',pct:22,have:false},{skill:'Terraform',pct:19,have:false},
+]
+const TR={
+  weeks:['Jan 6','Jan 13','Jan 20','Jan 27','Feb 3','Feb 10','Feb 17','Feb 24'],
+  series:[
+    {name:'LangChain',color:'#f5e642',vals:[18,21,24,27,29,32,35,38]},
+    {name:'Go',color:'#8fbf8a',vals:[38,39,41,40,42,43,43,44]},
+    {name:'Rust',color:'#f06faa',vals:[28,27,26,25,24,23,23,22]},
+    {name:'Kafka',color:'#a899e6',vals:[25,26,28,28,29,30,31,31]},
+  ]
+}
+const GP=[
+  {skill:'Go',pct:44,status:'gap'},{skill:'Kafka',pct:31,status:'adjacent'},
+  {skill:'gRPC',pct:29,status:'gap'},{skill:'Rust',pct:22,status:'gap'},
+  {skill:'Terraform',pct:19,status:'gap'},{skill:'Spark',pct:16,status:'gap'},
+  {skill:'Pinecone',pct:14,status:'adjacent'},
+]
+
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'))
+  document.getElementById('page-'+id).classList.add('active')
+  btn.classList.add('active')
+}
+function showTab(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'))
+  document.querySelectorAll('.tab-ct').forEach(t=>t.classList.remove('active'))
+  btn.classList.add('active')
+  document.getElementById('tab-'+id).classList.add('active')
+}
+function removeJob(id,val){
+  if(val==='Applied'||val==='Ignore'){
+    const el=document.getElementById(id)
+    if(el){el.style.opacity='0.15';el.style.transition='opacity 0.3s';setTimeout(()=>{el.remove();document.getElementById('badge').textContent=document.querySelectorAll('#tab-ta .jcard').length},320)}
+  }
+}
+document.getElementById('bars').innerHTML=SD.map(s=>`
+  <div class="bar-row">
+    <span class="bar-lbl">${s.skill}</span>
+    <div class="bar-track"><div class="${s.have?'bh':'bg2'}" style="width:${s.pct}%"></div></div>
+    <span class="bar-pct">${s.pct}%</span>
+  </div>`).join('')
+;(()=>{
+  const svg=document.getElementById('tsvg')
+  const W=580,H=130,p={t:10,r:10,b:22,l:28}
+  const iW=W-p.l-p.r,iH=H-p.t-p.b
+  const av=TR.series.flatMap(s=>s.vals)
+  const mn=Math.min(...av)-4,mx=Math.max(...av)+4
+  const x=i=>p.l+(i/(TR.weeks.length-1))*iW
+  const y=v=>p.t+iH-((v-mn)/(mx-mn))*iH
+  let h=''
+  TR.series.forEach(s=>{
+    const pts=s.vals.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
+    h+=`<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.8"/>`
+    s.vals.forEach((v,i)=>{h+=`<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="#141414" stroke="${s.color}" stroke-width="1.5"/>`})
+  })
+  TR.weeks.forEach((w,i)=>{if(i%2===0)h+=`<text x="${x(i).toFixed(1)}" y="${H-4}" text-anchor="middle" font-size="9" fill="#66665e" font-family="DM Mono,monospace">${w.slice(4)}</text>`})
+  svg.innerHTML=h
+  document.getElementById('tleg').innerHTML=TR.series.map(s=>`
+    <div style="display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-secondary);letter-spacing:0.04em">
+      <div style="width:16px;height:2px;background:${s.color};border-radius:1px;opacity:0.8"></div>${s.name}
+    </div>`).join('')
+})()
+document.getElementById('gtbody').innerHTML=GP.map(g=>{
+  const cls=g.status==='have'?'shave':g.status==='adjacent'?'sadj':'sgap'
+  const lbl=g.status==='have'?'Have it':g.status==='adjacent'?'Adjacent':'Gap'
+  const bc=g.status==='gap'?'#f06faa':g.status==='adjacent'?'#f5e642':'#8fbf8a'
+  return `<tr>
+    <td style="font-weight:400">${g.skill}</td>
+    <td><div style="display:flex;align-items:center;gap:8px">
+      <div style="width:80px;height:4px;background:var(--bg-surface);border-radius:2px;overflow:hidden;border:1px solid var(--border)">
+        <div style="width:${Math.min(g.pct,100)}%;height:100%;background:${bc};border-radius:2px;opacity:0.8"></div>
+      </div>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted)">${g.pct}%</span>
+    </div></td>
+    <td><span class="${cls}">${lbl}</span></td>
+  </tr>`
+}).join('')
+</script>
