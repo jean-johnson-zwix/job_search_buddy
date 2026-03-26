@@ -31,6 +31,10 @@ def node_resume_extraction(state: PipelineState) -> dict:
         logger.info(f"Resume {'parsed' if success else 'loaded from database'}")
     except Exception as e:
         logger.error(f"Resume extraction failed: {e}. Fallback - loading from database")
+    try:
+        db.save_llm_usage(get_usage_log())
+    except Exception as e:
+        logger.error(f"  LLM usage save failed (node 1): {e}")
     return {}
 
 # node 2: node_data_loader
@@ -152,7 +156,7 @@ def node_job_extraction(state: PipelineState) -> dict:
             extracted.append(job)
         except Exception as e:
             logger.error(f"  Extract failed '{job['title']}': {e}")
-            errors.append({"job_id": job["id"], "node": "extract", "error": str(e)})
+            errors.append({"job_id": job["id"], "job_title": job["title"], "node": "extract", "error": str(e)})
 
     # known jobs — load skills from DB
     for job in state["known_jobs"]:
@@ -162,11 +166,16 @@ def node_job_extraction(state: PipelineState) -> dict:
             extracted.append(job)
         except Exception as e:
             logger.error(f"  DB load failed '{job['title']}': {e}")
-            errors.append({"job_id": job["id"], "node": "extract_known", "error": str(e)})
+            errors.append({"job_id": job["id"], "job_title": job["title"], "node": "extract_known", "error": str(e)})
 
     logger.info(f"Skills extracted of new jobs: {call_count} · "
                 f"Known jobs loaded: {len(state['known_jobs'])} · "
                 f"Total: {len(extracted)}")
+
+    try:
+        db.save_llm_usage(get_usage_log())
+    except Exception as e:
+        logger.error(f"  LLM usage save failed (node 4): {e}")
 
     return {
         "extracted_jobs": extracted,
@@ -225,9 +234,14 @@ def node_job_match(state: PipelineState) -> dict:
 
         except Exception as e:
             logger.error(f"  Match failed '{job['title']}': {e}")
-            errors.append({"job_id": job["id"], "node": "smart_match", "error": str(e)})
+            errors.append({"job_id": job["id"], "job_title": job["title"], "node": "smart_match", "error": str(e)})
 
     logger.info(f"Scored: {len(matched)} jobs | Skipped: {skipped} jobs")
+
+    try:
+        db.save_llm_usage(get_usage_log())
+    except Exception as e:
+        logger.error(f"  LLM usage save failed (node 5): {e}")
 
     return {
         "matched_jobs": matched,
@@ -243,7 +257,11 @@ def node_emailer(state: PipelineState) -> dict:
     try:
         db.save_llm_usage(get_usage_log())
     except Exception as e:
-        logger.error(f"  LLM usage save failed: {e}")
+        logger.error(f"  LLM usage save failed (node 6): {e}")
+    try:
+        db.save_errors(state.get("errors", []))
+    except Exception as e:
+        logger.error(f"  Error save failed: {e}")
     try:
         send_daily_digest()
     except Exception as e:

@@ -250,3 +250,23 @@ def save_llm_usage(entries: list[dict], run_date: Optional[date] = None) -> None
 
     db.table("llm_usage").upsert(rows, on_conflict="run_date,task").execute()
     logger.info(f"Saved LLM usage: {len(rows)} task(s) for {today}")
+
+
+def save_errors(errors: list[dict], run_date: Optional[date] = None) -> None:
+    """Insert pipeline errors into pipeline_errors table."""
+    if not errors:
+        return
+    db = get_client()
+    today = str(run_date or date.today())
+    rows = [
+        {
+            "run_date":  today,
+            "node":      e["node"],
+            "job_id":    e.get("job_id"),
+            "job_title": e.get("job_title"),
+            "error":     e["error"],
+        }
+        for e in errors
+    ]
+    db.table("pipeline_errors").insert(rows).execute()
+    logger.info(f"Saved {len(rows)} pipeline error(s) for {today}")

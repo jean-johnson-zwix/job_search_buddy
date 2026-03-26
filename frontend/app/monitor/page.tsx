@@ -49,14 +49,21 @@ function formatTask(task: string) {
 }
 
 export default function MonitorPage() {
-  const [rows,    setRows]    = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState<string | null>(null)
+  const [rows,       setRows]       = useState<any[]>([])
+  const [errorRows,  setErrorRows]  = useState<any[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/usage')
-      .then(r => r.json())
-      .then(d => { setRows(d); setLoading(false) })
+    Promise.all([
+      fetch('/api/usage').then(r => r.json()),
+      fetch('/api/errors').then(r => r.json()),
+    ])
+      .then(([usage, errs]) => {
+        setRows(Array.isArray(usage) ? usage : [])
+        setErrorRows(Array.isArray(errs) ? errs : [])
+        setLoading(false)
+      })
       .catch(e => { setError(e.message); setLoading(false) })
   }, [])
 
@@ -75,11 +82,19 @@ export default function MonitorPage() {
   const providers   = [...new Set(latestRows.map((r: any) => r.provider))].join(', ')
   const runDays     = dates.length
 
+  // Errors grouped by date
+  const errorsByDate: Record<string, any[]> = {}
+  for (const e of errorRows) {
+    if (!errorsByDate[e.run_date]) errorsByDate[e.run_date] = []
+    errorsByDate[e.run_date].push(e)
+  }
+  const todayErrors = errorsByDate[dates[0]] ?? []
+
   const stats = [
-    { label: 'Runs tracked',   value: runDays,                           accent: 'yellow'   },
-    { label: 'Calls today',    value: totalCalls || '—',                 accent: 'sage'     },
+    { label: 'Runs tracked',   value: runDays,                                          accent: 'yellow'   },
+    { label: 'Calls today',    value: totalCalls || '—',                                accent: 'sage'     },
     { label: 'Tokens today',   value: totalTokens ? totalTokens.toLocaleString() : '—', accent: 'lavender' },
-    { label: 'Provider',       value: providers || '—',                  accent: 'pink'     },
+    { label: 'Errors today',   value: todayErrors.length || '—',                        accent: 'pink'     },
   ]
 
   // Chart: tokens per run date (last 14 days)
@@ -202,6 +217,50 @@ export default function MonitorPage() {
               </div>
             )
           })}
+
+          {/* Pipeline errors */}
+          {Object.keys(errorsByDate).length > 0 && (
+            <div style={CARD_STYLE}>
+              <div style={SECTION_LABEL('var(--pink)')}>Pipeline errors — last 30 days</div>
+              {Object.entries(errorsByDate)
+                .sort(([a], [b]) => b.localeCompare(a))
+                .map(([date, errs]) => (
+                  <div key={date} style={{ marginBottom: '16px' }}>
+                    <div style={{ fontFamily: 'DM Mono, monospace', fontSize: '10px', color: 'var(--sand)', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                      {date} · <span style={{ color: 'var(--pink)' }}>{errs.length} error{errs.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>
+                          {['Node', 'Job', 'Error'].map(h => (
+                            <th key={h} style={{ textAlign: 'left', padding: '4px 8px', fontFamily: 'DM Mono, monospace', fontSize: '9px', fontWeight: 400, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {errs.map((e: any, i: number) => (
+                          <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <td style={{ padding: '7px 8px', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '10px', color: 'var(--pink)', background: 'rgba(240,111,170,0.08)', border: '1px solid rgba(240,111,170,0.2)', borderRadius: '3px', padding: '2px 7px' }}>
+                                {e.node}
+                              </span>
+                            </td>
+                            <td style={{ padding: '7px 8px', fontFamily: 'DM Mono, monospace', fontSize: '10px', color: 'var(--sand)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {e.job_title ?? e.job_id ?? '—'}
+                            </td>
+                            <td style={{ padding: '7px 8px', fontFamily: 'DM Mono, monospace', fontSize: '10px', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
+                              {e.error}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+            </div>
+          )}
 
         </div>
       )}
