@@ -7,6 +7,11 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+OPENROUTER_JSON_SUPPORTED_MODELS = {
+    "deepseek/deepseek-r1:free",
+    "google/gemini-2.0-flash-001:free",
+}
+
 GROQ_JSON_SUPPORTED_MODELS = {
     "llama-3.3-70b-versatile",
     "llama3-70b-8192",
@@ -161,7 +166,8 @@ class LLMClient:
 
         if isinstance(error, httpx.HTTPStatusError):
             status = error.response.status_code
-            return status == 429 or 500 <= status < 600
+            # 429 must NOT be retried on the same provider — fall through to next fallback
+            return 500 <= status < 600
 
         return False
 
@@ -226,7 +232,7 @@ class LLMClient:
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
-        if response_format == "json":
+        if response_format == "json" and model in OPENROUTER_JSON_SUPPORTED_MODELS:
             payload["response_format"] = {"type": "json_object"}
 
         headers = {
