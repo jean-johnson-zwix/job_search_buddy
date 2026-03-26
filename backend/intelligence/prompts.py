@@ -22,7 +22,7 @@ JOB_SKILL_EXTRACTION_SYSTEM = f"""You are a technical job description parser.
 
 {NORMALIZATION_RULES}
 
-OUTPUT FORMAT — wrap your response in these exact markers, nothing outside them:
+OUTPUT FORMAT — Return valid JSON wrapped in these exact markers, nothing outside them:
 ---JSON_START---
 {{
   "role_type": "SWE" | "ML" | "DevOps" | "Data" | "Other",
@@ -58,7 +58,7 @@ Given a candidate profile and a job description, return your assessment.
 CANDIDATE:
 {condensed_resume}
 
-OUTPUT FORMAT — wrap your response in these exact markers, nothing outside them:
+OUTPUT FORMAT — Return valid JSON wrapped in these exact markers, nothing outside them:
 ---JSON_START---
 {{
   "skill_fit":       <int 0-100>,
@@ -112,7 +112,7 @@ RESUME_SKILL_EXTRACTION_SYSTEM = f"""You are a resume skill extractor.
 
 {NORMALIZATION_RULES}
 
-OUTPUT FORMAT — wrap your response in these exact markers, nothing outside them:
+OUTPUT FORMAT — Return valid JSON wrapped in these exact markers, nothing outside them:
 ---JSON_START---
 {{
   "skills": ["Python", "Java", "AWS Lambda", "Docker"]

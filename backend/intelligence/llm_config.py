@@ -22,7 +22,7 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "fallbacks": [
             ("gemini",     "gemini-3.1-flash-lite-preview"),
             ("groq",       "llama-3.3-70b-versatile"),
-            ("cerebras",   "gpt-oss-120b"),
+            ("cerebras",   "llama3.1-8b"),
         ],
         "max_tokens":      2048,
         "temperature":     0.0,
@@ -31,7 +31,7 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
     RESUME_CONDENSATION: {
         "description": "Plain-text candidate profile condensation from resume text",
         "provider": "cerebras",
-        "model":    "gpt-oss-120b",
+        "model":    "llama3.1-8b",
         "fallbacks": [
             ("sambanova",  "Qwen3-32B"),
             ("gemini",     "gemini-3.1-flash-lite-preview"),
@@ -48,7 +48,7 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
         "fallbacks": [
             ("gemini",     "gemini-3.1-flash-lite-preview"),
             ("groq",       "llama-3.3-70b-versatile"),
-            ("cerebras",   "gpt-oss-120b"),
+            ("cerebras",   "llama3.1-8b"),
         ],
         "max_tokens":      2048,
         "temperature":     0.0,
@@ -57,9 +57,9 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
     JOB_RESUME_MATCH: {
         "description": "Score skill_fit, role_fit, experience_fit against candidate profile",
         "provider":    "sambanova",
-        "model":       "Qwen3-235B-A22B",
+        "model":       "Qwen3-235B-A22B-Instruct-2507",
         "fallbacks": [
-            ("sambanova",  "Qwen3-32B"),
+            ("cerebras",   "qwen-3-235b-a22b-instruct-2507"),
             ("gemini",     "gemini-3.1-flash-lite-preview"),
             ("groq",       "llama-3.3-70b-versatile"),
         ],
