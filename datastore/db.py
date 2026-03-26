@@ -175,7 +175,8 @@ def get_applied_jobs(limit: int = 100) -> list[dict]:
     return res.data or []
 
 
-def get_top_matches(limit: int = 15, run_date: Optional[date] = None) -> list[dict]:
+def get_top_matches(limit: int = 15, run_date: Optional[date] = None, max_per_company: int = 3) -> list[dict]:
+    from collections import defaultdict
     db = get_client()
     today = str(run_date or date.today())
     res = (
@@ -185,15 +186,27 @@ def get_top_matches(limit: int = 15, run_date: Optional[date] = None) -> list[di
             "matched_skills, gap_skills, green_flags, red_flags, summary, "
             "jobs(id, title, location, remote, apply_url, posted_at, "
             "role_type, seniority, description, "
-            "companies(name, tier))"
+            "companies(id, name, tier))"
         )
         .eq("run_date", today)
         .in_("status", ["new", "reviewing"])
         .order("final_score", desc=True)
-        .limit(limit)
+        .limit(limit * max_per_company)
         .execute()
     )
-    return res.data or []
+    rows = res.data or []
+    company_counts: defaultdict[str, int] = defaultdict(int)
+    capped = []
+    for match in rows:
+        company_id = ((match.get("jobs") or {}).get("companies") or {}).get("id")
+        if company_id is not None and company_counts[company_id] >= max_per_company:
+            continue
+        if company_id is not None:
+            company_counts[company_id] += 1
+        capped.append(match)
+        if len(capped) >= limit:
+            break
+    return capped
 
 def _dt_str(dt) -> Optional[str]:
     if dt is None:
