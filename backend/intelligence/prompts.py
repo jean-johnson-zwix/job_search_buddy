@@ -19,17 +19,18 @@ NORMALIZATION RULES (apply to every skill name):
 JOB_SKILL_EXTRACTION_USER = "Title: {title}\n\nDescription:\n{description}"
 
 JOB_SKILL_EXTRACTION_SYSTEM = f"""You are a technical job description parser.
-Return ONLY valid JSON — no markdown, no explanation, no prose.
 
 {NORMALIZATION_RULES}
 
-OUTPUT SCHEMA:
+OUTPUT FORMAT — wrap your response in these exact markers, nothing outside them:
+---JSON_START---
 {{
   "role_type": "SWE" | "ML" | "DevOps" | "Data" | "Other",
   "seniority": "Junior" | "Mid" | "Senior" | "Staff" | "Unknown",
   "years_required": <integer or null>,
   "skills": ["Python", "AWS Lambda", "Docker"]
 }}
+---JSON_END---
 
 EXTRACTION RULES:
 - skills: flat list of canonical skill name strings — no objects, no metadata
@@ -52,12 +53,13 @@ import datastore.db as db
 condensed_resume = db.get_candidate_profile("condensed_resume")
 
 JOB_RESUME_MATCH_SYSTEM = f"""You are a technical recruiter evaluating job fit.
-Given a candidate profile and a job description, return ONLY valid JSON.
+Given a candidate profile and a job description, return your assessment.
 
 CANDIDATE:
 {condensed_resume}
 
-OUTPUT SCHEMA:
+OUTPUT FORMAT — wrap your response in these exact markers, nothing outside them:
+---JSON_START---
 {{
   "skill_fit":       <int 0-100>,
   "role_fit":        <int 0-100>,
@@ -68,6 +70,7 @@ OUTPUT SCHEMA:
   "red_flags":       ["<specific JD phrases that are concerns>"],
   "summary":         "<2 sentences: fit story + biggest gap>"
 }}
+---JSON_END---
 
 SCORING RUBRIC:
 
@@ -106,14 +109,15 @@ RULES:
 JOB_RESUME_MATCH_USER = "Title: {title}\n\nDescription:\n{description}"
 
 RESUME_SKILL_EXTRACTION_SYSTEM = f"""You are a resume skill extractor.
-Return ONLY valid JSON — no markdown, no explanation.
 
 {NORMALIZATION_RULES}
 
-OUTPUT SCHEMA:
+OUTPUT FORMAT — wrap your response in these exact markers, nothing outside them:
+---JSON_START---
 {{
   "skills": ["Python", "Java", "AWS Lambda", "Docker"]
 }}
+---JSON_END---
 
 RULES:
 - Scan EVERY section of the resume independently:

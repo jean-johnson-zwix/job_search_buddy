@@ -18,9 +18,16 @@ def _parse_json(text: str) -> dict | None:
     text = text.strip()
     # strip reasoning model thinking blocks (<think>...</think>)
     text = re.sub(r"<think>[\s\S]*?</think>", "", text).strip()
-    # strip markdown fences
-    text = re.sub(r"^```(?:json)?\s*", "", text)
-    text = re.sub(r"\s*```$", "", text)
+
+    # try marker extraction first (prompt-based JSON, works across all providers)
+    marker_match = re.search(r"---JSON_START---\s*([\s\S]*?)\s*---JSON_END---", text)
+    if marker_match:
+        text = marker_match.group(1).strip()
+    else:
+        # fall back: strip markdown fences
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
+
     try:
         return json.loads(text)
     except json.JSONDecodeError as e:

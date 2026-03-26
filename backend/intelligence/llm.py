@@ -8,12 +8,6 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-OPENROUTER_JSON_SUPPORTED_MODELS = {
-    "deepseek/deepseek-r1:free",
-    "google/gemini-2.0-flash-001:free",
-    "minimax/minimax-m2.5:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-}
 
 
 GROQ_JSON_SUPPORTED_MODELS = {
@@ -30,6 +24,7 @@ class LLMClient:
         self.openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
         self.groq_api_key = os.getenv("GROQ_API_KEY")
         self.cerebras_api_key = os.getenv("CEREBRAS_API_KEY")
+        self.sambanova_api_key = os.getenv("SAMBANOVA_API_KEY")
         self.timeout = 30
         self.max_retries = 2
         self.retry_base_delay = 1.0
@@ -53,7 +48,7 @@ class LLMClient:
             )
         if provider == "openrouter":
             return self._call_openrouter(
-                system_prompt, user_prompt, model, response_format, max_tokens, temperature
+                system_prompt, user_prompt, model, max_tokens, temperature
             )
         if provider == "groq":
             return self._call_groq(
@@ -61,6 +56,10 @@ class LLMClient:
             )
         if provider == "cerebras":
             return self._call_cerebras(
+                system_prompt, user_prompt, model, response_format, max_tokens, temperature
+            )
+        if provider == "sambanova":
+            return self._call_sambanova(
                 system_prompt, user_prompt, model, response_format, max_tokens, temperature
             )
 
@@ -147,8 +146,12 @@ class LLMClient:
                 if attempt >= self.max_retries:
                     raise
 
-                cap = 30.0
-                delay = random.uniform(0, min(cap, self.retry_base_delay * (2 ** attempt)))
+                if self._is_rate_limit_error(e):
+                    # Rate limit: wait long enough for the provider's quota window to recover
+                    delay = random.uniform(15, 30)
+                else:
+                    cap = 30.0
+                    delay = random.uniform(0, min(cap, self.retry_base_delay * (2 ** attempt)))
                 logger.warning(
                     "Retryable LLM error [%s/%s], backing off %.2fs before retry (attempt %d): %s",
                     provider, model, delay, attempt + 1, repr(e),
@@ -166,10 +169,15 @@ class LLMClient:
 
         if isinstance(error, httpx.HTTPStatusError):
             status = error.response.status_code
-            # 429 must NOT be retried on the same provider — fall through to next fallback
-            return 500 <= status < 600
+            return status == 429 or 500 <= status < 600
 
         return False
+
+    def _is_rate_limit_error(self, error: Exception) -> bool:
+        return (
+            isinstance(error, httpx.HTTPStatusError)
+            and error.response.status_code == 429
+        )
 
     def _call_gemini(
         self,
@@ -215,7 +223,6 @@ class LLMClient:
         system_prompt: str,
         user_prompt: str,
         model: str,
-        response_format: str,
         max_tokens: int,
         temperature: float,
     ) -> str:
@@ -232,8 +239,7 @@ class LLMClient:
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
-        if response_format == "json" and model in OPENROUTER_JSON_SUPPORTED_MODELS:
-            payload["response_format"] = {"type": "json_object"}
+        # json_object mode intentionally omitted for OpenRouter — prompt markers handle extraction
 
         headers = {
             "Authorization": f"Bearer {self.openrouter_api_key}",

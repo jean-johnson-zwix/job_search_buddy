@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import json
 from datetime import datetime, timezone
 
@@ -54,7 +55,9 @@ def run_resume_parser(force: bool = False) -> bool:
         system_prompt=RESUME_SKILL_EXTRACTION_SYSTEM,
         user_prompt=resume_text,
     )
-    raw_list = json.loads(raw_response)["skills"]
+    marker_match = re.search(r"---JSON_START---\s*([\s\S]*?)\s*---JSON_END---", raw_response)
+    raw_json = marker_match.group(1).strip() if marker_match else raw_response.strip()
+    raw_list = json.loads(raw_json)["skills"]
     skills   = list(dict.fromkeys(raw_list))
     logger.info(f"  Extracted {len(skills)} skills")
 
