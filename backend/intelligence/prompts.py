@@ -11,6 +11,7 @@ NORMALIZATION RULES (apply to every skill name):
    - "React JS", "React.js" -> "React"
    - "scikit-learn", "sklearn" -> "Scikit-learn"
    - "Docker Swarm", "Docker Containers" -> "Docker"
+   - "Machine Learning" -> "ML"
 9. NO FRAGMENTS: If a word is part of a company name (e.g., "MyEdMaster"), do NOT extract "My" or "Master".
 10. CLOUD SPECIFICITY: Always use the provider prefix for services (e.g., "AWS Lambda", "GCP BigQuery").
 11. Ensure 1:1 mapping to industry standard naming.
@@ -42,6 +43,8 @@ EXTRACTION RULES:
 - years_required: MINIMUM years stated ("5-8 years" → 5, "5+ years" → 5), null if not mentioned
 - seniority: infer from title and scope; "Unknown" if years range spans more than 4 years
 - role_type: "ML" only if role involves model training/research; RAG/LLM pipelines = "SWE"
+If the JD is extremely long, prioritize extracting the 'Must Have' and 'Technical Requirements' sections first. 
+If you are reaching your output limit, ensure the JSON object is closed properly even if some 'Nice-to-have' skills are omitted.
 
 ANTI-HALLUCINATION:
 - ONLY extract skills that appear verbatim or by clear implication in the provided resume text

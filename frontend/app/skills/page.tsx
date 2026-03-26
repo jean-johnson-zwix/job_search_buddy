@@ -204,7 +204,7 @@ export default function SkillsPage() {
               Skills to develop
             </p>
             <p style={{ fontFamily: 'DM Mono, monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: '14px' }}>
-              required in more than 5% of jobs · adjacent = similar skill in your resume
+              required in more than 5% of jobs · skills you already have are excluded · adjacent = similar skill in your resume
             </p>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>

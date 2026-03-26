@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 // Returns the ISO date string for the Monday of the week containing `dateStr`
 function getWeekStart(dateStr: string): string {
   const d = new Date(dateStr)
@@ -96,7 +98,7 @@ export async function GET(request: Request) {
       })
       return { skill, pct, status: have ? 'have' : adjacent ? 'adjacent' : 'gap' }
     })
-    .filter(g => g.pct > 5)
+    .filter(g => g.pct > 5 && g.status !== 'have')
     .sort((a, b) => b.pct - a.pct)
 
   return NextResponse.json({ topSkills, trends, gaps })
