@@ -2,6 +2,7 @@ import os
 import time
 import random
 import logging
+from collections import deque
 from typing import Optional, Dict, Any, List, Tuple
 from .llm_config import get_llm_task_config, PROVIDER_TIMEOUTS
 import httpx
@@ -392,7 +393,7 @@ class LLMClient:
 # ---------------------------------------------------------------------------
 # Module-level usage accumulator — reset each pipeline run
 # ---------------------------------------------------------------------------
-_usage_log: list[dict] = []
+_usage_log: deque = deque(maxlen=1000)
 
 
 def get_usage_log() -> list[dict]:
@@ -401,7 +402,7 @@ def get_usage_log() -> list[dict]:
 
 def reset_usage_log() -> None:
     global _usage_log
-    _usage_log = []
+    _usage_log = deque(maxlen=1000)
 
 
 _client: Optional[LLMClient] = None
