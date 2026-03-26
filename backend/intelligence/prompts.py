@@ -7,6 +7,13 @@ NORMALIZATION RULES (apply to every skill name):
 5. Databases: "PostgreSQL" not "Postgres", "MongoDB" not "Mongo"
 6. Frameworks: "Spring Boot" not "SpringBoot", "scikit-learn" not "sklearn"
 7. When in doubt: google the official product name and use that exactly
+8. CANONICAL NAMES: 
+   - "React JS", "React.js" -> "React"
+   - "scikit-learn", "sklearn" -> "Scikit-learn"
+   - "Docker Swarm", "Docker Containers" -> "Docker"
+9. NO FRAGMENTS: If a word is part of a company name (e.g., "MyEdMaster"), do NOT extract "My" or "Master".
+10. CLOUD SPECIFICITY: Always use the provider prefix for services (e.g., "AWS Lambda", "GCP BigQuery").
+11. Ensure 1:1 mapping to industry standard naming.
 """
 
 JOB_SKILL_EXTRACTION_USER = "Title: {title}\n\nDescription:\n{description}"
@@ -21,35 +28,24 @@ OUTPUT SCHEMA:
   "role_type": "SWE" | "ML" | "DevOps" | "Data" | "Other",
   "seniority": "Junior" | "Mid" | "Senior" | "Staff" | "Unknown",
   "years_required": <integer or null>,
-  "skills": [
-    {{
-      "name": "<canonical skill name>",
-      "category": "language" | "framework" | "cloud" | "database" | "tool" | "other",
-      "required": true | false
-    }}
-  ]
+  "skills": ["Python", "AWS Lambda", "Docker"]
 }}
 
 EXTRACTION RULES:
-- Scan ALL sections independently: Responsibilities, Requirements,
-  Preferred/Nice-to-have, Tech Stack, About the Role, Qualifications
-- skills: extract ALL concrete technical skills found anywhere in the JD — no limit
-- Do not extract domain names or architectural concepts as skills 
-  ("distributed systems", "frontend", "cloud", "backend", "microservices" 
-  are domains — only extract concrete named technologies)
-- If the JD is language-agnostic or intentionally vague about tech stack, 
-  return only what is explicitly mentioned — do not infer or hallucinate skills
-- A JD with 3 skills is valid output if only 3 are mentioned
-- concrete = languages, frameworks, cloud services, databases, tools, ML libraries
-- no soft skills ("communication"), no methodologies ("agile"), no vague terms
-- required=true if skill is in Requirements/Must-have section or listed without qualification
-- required=false if skill is in Preferred/Nice-to-have/Bonus/Plus section
-- years_required: extract the MINIMUM years stated ("5-8 years" → 5, "5+ years" → 5)
-- years_required: null if not mentioned
-- seniority: infer from title and scope, not years alone
-- seniority: if years_required range spans more than 4 years (e.g. "2-12+"), 
-  use "Unknown" — wide ranges indicate intentional ambiguity
+- skills: flat list of canonical skill name strings — no objects, no metadata
+- Scan ALL sections: Responsibilities, Requirements, Preferred/Nice-to-have, Tech Stack, Qualifications
+- Extract ALL concrete technical skills found anywhere — no limit
+- Concrete = languages, frameworks, cloud services, databases, tools, ML libraries
+- No domain names ("distributed systems", "microservices"), no soft skills, no methodologies ("agile")
+- If the JD is vague about tech stack, return only what is explicitly mentioned — do not infer
+- years_required: MINIMUM years stated ("5-8 years" → 5, "5+ years" → 5), null if not mentioned
+- seniority: infer from title and scope; "Unknown" if years range spans more than 4 years
 - role_type: "ML" only if role involves model training/research; RAG/LLM pipelines = "SWE"
+
+ANTI-HALLUCINATION:
+- ONLY extract skills that appear verbatim or by clear implication in the provided resume text
+- Do NOT infer skills from context or add plausible-sounding technologies not mentioned
+- If you are unsure whether a skill appears in the text, omit it
 """
 
 import datastore.db as db
@@ -133,6 +129,11 @@ RULES:
   a skill used in a project bullet counts equally
 - No soft skills, no job titles, no company names, no protocols (HTTP, HTTPS)
 - Return a flat deduplicated list of strings — nothing else
+
+ANTI-HALLUCINATION:
+- ONLY extract skills that appear verbatim or by clear implication in the provided resume text
+- Do NOT infer skills from context or add plausible-sounding technologies not mentioned
+- If you are unsure whether a skill appears in the text, omit it
 """
 
 RESUME_CONDENSATION_SYSTEM = """You are distilling a software engineer's resume
@@ -168,21 +169,4 @@ RULES:
 - Do not infer seniority beyond what the resume supports.
 - Do not invent production experience where only project work is shown.
 - Keep each section concise and information-dense.
-"""
-
-RESUME_SKILL_EXTRACTION_SYSTEM = f"""You are a resume skill extractor.
-Return ONLY valid JSON — no markdown, no explanation.
-
-{NORMALIZATION_RULES}
-
-OUTPUT SCHEMA:
-{{
-  "skills": ["Python", "Java", "AWS Lambda", "Docker"]
-}}
-
-RULES:
-- Extract EVERY concrete technical skill mentioned anywhere in the resume
-- Include languages, frameworks, cloud services, databases, tools, ML libraries
-- No soft skills, no job titles, no company names
-- Return a flat list of strings — nothing else
 """

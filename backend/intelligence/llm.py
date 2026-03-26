@@ -11,6 +11,7 @@ GROQ_JSON_SUPPORTED_MODELS = {
     "llama-3.3-70b-versatile",
     "llama3-70b-8192",
     "qwen/qwen3-32b",
+    "deepseek-r1-distill-llama-70b",
 }
 
 class LLMClient:

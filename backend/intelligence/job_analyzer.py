@@ -15,7 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 def _parse_json(text: str) -> dict | None:
-    text = re.sub(r"^```(?:json)?\s*", "", text.strip())
+    text = text.strip()
+    # strip reasoning model thinking blocks (<think>...</think>)
+    text = re.sub(r"<think>[\s\S]*?</think>", "", text).strip()
+    # strip markdown fences
+    text = re.sub(r"^```(?:json)?\s*", "", text)
     text = re.sub(r"\s*```$", "", text)
     try:
         return json.loads(text)

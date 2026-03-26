@@ -56,35 +56,27 @@ def get_existing_job_ids(job_ids: list[str]) -> set[str]:
     )
     return {row["id"] for row in (res.data or [])}
 
-def upsert_skills(job_id: str, skills: list[dict]) -> None:
+def upsert_skills(job_id: str, skills: list[str]) -> None:
     db = get_client()
     db.table("job_skills").delete().eq("job_id", job_id).execute()
     rows = [
-        {
-            "job_id":   job_id,
-            "skill":    s["name"],
-            "category": s.get("category", "other"),
-            "required": s.get("required", True),
-        }
+        {"job_id": job_id, "skill": s, "category": "other", "required": True}
         for s in skills
     ]
     if rows:
         db.table("job_skills").insert(rows).execute()
 
 
-def get_job_skills(job_id: str) -> list[dict]:
+def get_job_skills(job_id: str) -> list[str]:
     """Load stored skills for a known job — avoids re-extraction."""
     db = get_client()
     res = (
         db.table("job_skills")
-        .select("skill, category, required")
+        .select("skill")
         .eq("job_id", job_id)
         .execute()
     )
-    return [
-        {"name": r["skill"], "category": r["category"], "required": r["required"]}
-        for r in (res.data or [])
-    ]
+    return [r["skill"] for r in (res.data or [])]
 
 def get_candidate_skills() -> list[dict]:
     """Returns all rows from candidate_skills table."""
