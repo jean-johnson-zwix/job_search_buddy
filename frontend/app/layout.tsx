@@ -36,8 +36,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           <div style={{ display: 'flex', gap: '4px' }}>
             {[
-              { href: '/jobs',   label: 'Jobs'   },
-              { href: '/skills', label: 'Skills' },
+              { href: '/jobs',    label: 'Jobs'    },
+              { href: '/skills',  label: 'Skills'  },
+              { href: '/monitor', label: 'Monitor' },
             ].map(({ href, label }) => (
               <Link
                 key={href}
