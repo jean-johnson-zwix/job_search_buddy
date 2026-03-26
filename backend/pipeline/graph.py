@@ -131,8 +131,10 @@ def node_job_extraction(state: PipelineState) -> dict:
         logger.warning(f"MAX_NEW_JOBS={max_new}: capping {len(state['new_jobs'])} → {max_new} new jobs")
 
     # new jobs - extract skills via llm
-    for job in new_jobs:
+    total_new = len(new_jobs)
+    for i, job in enumerate(new_jobs, 1):
         try:
+            logger.info("[%d/%d] Extracting skills: %s", i, total_new, job["title"])
             result = extract_skills_from_jobs(
                 job["title"],
                 job.get("description", "")
@@ -188,14 +190,20 @@ def node_job_match(state: PipelineState) -> dict:
     logger.info("NODE 5 - JOB MATCHING")
     matched   = []
     errors    = list(state["errors"])
-    skipped   = 0
 
-    for job in state["extracted_jobs"]:
-        # Skip if already scored today
-        if job["id"] in state["already_scored"]:
-            skipped += 1
-            continue
+    jobs_to_match = [j for j in state["extracted_jobs"] if j["id"] not in state["already_scored"]]
+    skipped = len(state["extracted_jobs"]) - len(jobs_to_match)
 
+    import os
+    max_new = int(os.getenv("MAX_NEW_JOBS", 0)) or None
+    if max_new and len(jobs_to_match) > max_new:
+        logger.warning("MAX_NEW_JOBS=%d: capping matching %d → %d jobs", max_new, len(jobs_to_match), max_new)
+        jobs_to_match = jobs_to_match[:max_new]
+
+    total_to_match = len(jobs_to_match)
+
+    for i, job in enumerate(jobs_to_match, 1):
+        logger.info("[%d/%d] Matching: %s", i, total_to_match, job["title"])
         try:
             result = match_resume_to_job(
                 job["title"],
@@ -205,7 +213,7 @@ def node_job_match(state: PipelineState) -> dict:
             time.sleep(DELAY_SEC)
 
             if not result:
-                logger.warning(f"match_resume_to_job returned None for '{job['title']}'")
+                logger.warning("match_resume_to_job returned None for '%s'", job["title"])
                 continue
 
             final_score = compute_final_score(

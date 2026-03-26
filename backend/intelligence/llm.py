@@ -76,7 +76,7 @@ class LLMClient:
         temperature: float,
         response_format: str = "text",
         fallbacks: Optional[List[Tuple[str, str]]] = None,
-    ) -> str:
+    ) -> Tuple[str, str, str]:
         attempts: List[Tuple[str, str]] = [(provider, model)]
         if fallbacks:
             attempts.extend(fallbacks)
@@ -94,7 +94,7 @@ class LLMClient:
                     },
                 )
 
-                return self._call_with_retry(
+                response = self._call_with_retry(
                     provider=current_provider,
                     model=current_model,
                     system_prompt=system_prompt,
@@ -103,6 +103,7 @@ class LLMClient:
                     temperature=temperature,
                     response_format=response_format,
                 )
+                return response, current_provider, current_model
 
             except Exception as e:
                 errors.append(f"{current_provider}/{current_model}: {repr(e)}")
@@ -443,7 +444,7 @@ def call_llm(
     if not all([model, provider, system_prompt, user_prompt]):
         raise ValueError("Missing required LLM parameters")
     # generate response
-    response = get_llm().call_with_fallback(
+    response, actual_provider, actual_model = get_llm().call_with_fallback(
         model=model,
         provider=provider,
         system_prompt=system_prompt,
@@ -455,15 +456,21 @@ def call_llm(
     )
     end = time.perf_counter()
     duration_ms = round((end - start) * 1000, 2)
-    logger.info(
-        "LLM call success | task=%s provider=%s model=%s duration_ms=%s",
-        task, provider, model, duration_ms,
-    )
+    if actual_provider != provider or actual_model != model:
+        logger.info(
+            "LLM call success (fallback) | task=%s intended=%s/%s actual=%s/%s duration_ms=%s",
+            task, provider, model, actual_provider, actual_model, duration_ms,
+        )
+    else:
+        logger.info(
+            "LLM call success | task=%s provider=%s model=%s duration_ms=%s",
+            task, actual_provider, actual_model, duration_ms,
+        )
     last = get_llm()._last_usage
     _usage_log.append({
         "task":              task or "unknown",
-        "provider":          provider,
-        "model":             model,
+        "provider":          actual_provider,
+        "model":             actual_model,
         "prompt_tokens":     last["prompt_tokens"],
         "completion_tokens": last["completion_tokens"],
         "total_tokens":      last["total_tokens"],
