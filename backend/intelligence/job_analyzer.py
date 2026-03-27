@@ -31,7 +31,17 @@ def _parse_json(text: str) -> dict | None:
     try:
         return json.loads(text)
     except json.JSONDecodeError as e:
-        # Strip trailing junk after the last valid JSON delimiter
+        # "Extra data" means the model returned valid JSON followed by trailing text.
+        # e.pos is the exact character where the extra content starts — slice it off.
+        if "Extra data" in str(e):
+            try:
+                result = json.loads(text[:e.pos])
+                logger.warning("JSON extra-data recovered (truncated at pos %d)", e.pos)
+                return result
+            except json.JSONDecodeError:
+                pass
+
+        # Truncation: strip trailing junk after the last valid JSON delimiter
         trimmed = re.sub(r'[^"}\]]*$', '', text).strip()
         # Iteratively try closure sequences from simplest to most complete
         for closure in ['"', '"]', '"}', '"]}', '" ]}', '"} }']:
