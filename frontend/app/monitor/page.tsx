@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { StatStrip } from '@/components/StatStrip'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer,
+  ResponsiveContainer, Legend,
 } from 'recharts'
 
 const CARD_STYLE = {
@@ -92,20 +92,21 @@ export default function MonitorPage() {
   const todayErrors = errorsByDate[dates[0]] ?? []
 
   const stats = [
-    { label: 'Runs tracked',   value: runDays,                                          accent: 'yellow'   },
+    { label: 'Days tracked',   value: runDays,                                          accent: 'yellow'   },
     { label: 'Calls today',    value: totalCalls || '—',                                accent: 'sage'     },
     { label: 'Tokens today',   value: totalTokens ? totalTokens.toLocaleString() : '—', accent: 'lavender' },
     { label: 'Errors today',   value: todayErrors.length || '—',                        accent: 'pink'     },
   ]
 
-  // Chart: tokens per run date (last 14 days)
-  const tokenTrendRaw = dates.slice(0, 14).reverse()
-  const tokenTrend = tokenTrendRaw.map((date, i) => ({
-    date:   date.slice(5),
-    tokens: byDate[date].reduce((s: number, r: any) => s + r.total_tokens, 0),
-    calls:  byDate[date].reduce((s: number, r: any) => s + r.calls, 0),
-    fill:   i === tokenTrendRaw.length - 1 ? 'rgba(245,230,66,0.9)' : 'rgba(245,230,66,0.4)',
-  }))
+  // Chart: tokens per day broken down by task (last 14 days)
+  const ALL_TASKS = Object.keys(TASK_COLOR)
+  const tokenTrend = dates.slice(0, 14).reverse().map(date => {
+    const entry: Record<string, any> = { date: date.slice(5) }
+    for (const row of byDate[date]) {
+      entry[row.task] = (entry[row.task] ?? 0) + row.total_tokens
+    }
+    return entry
+  })
 
   return (
     <div>
@@ -134,26 +135,52 @@ export default function MonitorPage() {
 
           {/* Token usage over time */}
           <div style={CARD_STYLE}>
-            <div style={SECTION_LABEL()}>Token usage — last {tokenTrend.length} runs</div>
+            <div style={SECTION_LABEL()}>Token usage — last {tokenTrend.length} days</div>
             <p style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '16px', color: 'var(--cream)', marginBottom: '16px' }}>
-              Total tokens per day
+              Tokens per task per day
             </p>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={tokenTrend} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                 <XAxis dataKey="date" tick={{ fontSize: 10, fontFamily: 'DM Mono, monospace', fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fontFamily: 'DM Mono, monospace', fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : String(v)} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any) => [v.toLocaleString(), 'tokens']} />
-                <Bar dataKey="tokens" radius={[3, 3, 0, 0]} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any, name: any) => [v.toLocaleString(), formatTask(String(name))]} />
+                <Legend wrapperStyle={{ fontFamily: 'DM Mono, monospace', fontSize: '10px', color: 'var(--text-secondary)' }} formatter={formatTask} />
+                {ALL_TASKS.map((task, i) => (
+                  <Bar key={task} dataKey={task} stackId="a" fill={TASK_COLOR[task]} fillOpacity={0.85}
+                    radius={i === ALL_TASKS.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                  />
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Per-run breakdown */}
+          {/* Per-day breakdown */}
           {dates.map(date => {
-            const runRows = byDate[date]
-            const runTotal  = runRows.reduce((s: number, r: any) => s + r.total_tokens, 0)
-            const runCalls  = runRows.reduce((s: number, r: any) => s + r.calls, 0)
+            // Aggregate rows by (task, provider, model) so multiple same-day runs collapse into daily totals
+            const aggMap: Record<string, any> = {}
+            for (const r of byDate[date]) {
+              const key = `${r.task}__${r.provider}__${r.model}`
+              if (!aggMap[key]) {
+                aggMap[key] = { ...r }
+              } else {
+                const prev     = aggMap[key]
+                const newCalls = prev.calls + r.calls
+                aggMap[key] = {
+                  ...prev,
+                  calls:             newCalls,
+                  prompt_tokens:     prev.prompt_tokens     + r.prompt_tokens,
+                  completion_tokens: prev.completion_tokens + r.completion_tokens,
+                  total_tokens:      prev.total_tokens      + r.total_tokens,
+                  avg_duration_ms:   Math.round(
+                    (prev.avg_duration_ms * prev.calls + r.avg_duration_ms * r.calls) / newCalls
+                  ),
+                }
+              }
+            }
+            const dailyRows = Object.values(aggMap)
+            const dayTotal  = dailyRows.reduce((s: number, r: any) => s + r.total_tokens, 0)
+            const dayCalls  = dailyRows.reduce((s: number, r: any) => s + r.calls, 0)
             const isToday   = date === dates[0]
             return (
               <div key={date} style={{ ...CARD_STYLE, borderLeft: isToday ? '2px solid var(--yellow)' : '1px solid var(--border)' }}>
@@ -164,16 +191,16 @@ export default function MonitorPage() {
                     </span>
                     {isToday && (
                       <span style={{ marginLeft: '8px', fontFamily: 'DM Mono, monospace', fontSize: '9px', color: 'var(--bg-dark)', background: 'var(--yellow)', borderRadius: '2px', padding: '1px 6px', letterSpacing: '0.06em' }}>
-                        LATEST
+                        TODAY
                       </span>
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: '16px' }}>
                     <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '10px', color: 'var(--text-muted)' }}>
-                      {runCalls} calls
+                      {dayCalls} calls
                     </span>
                     <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '10px', color: 'var(--lavender)' }}>
-                      {runTotal.toLocaleString()} tokens
+                      {dayTotal.toLocaleString()} tokens
                     </span>
                   </div>
                 </div>
@@ -189,11 +216,11 @@ export default function MonitorPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {runRows.map((r: any) => {
-                      const taskColor    = TASK_COLOR[r.task]    ?? 'var(--sand)'
-                      const provColor    = PROVIDER_COLOR[r.provider] ?? 'var(--sand)'
+                    {dailyRows.map((r: any) => {
+                      const taskColor = TASK_COLOR[r.task]        ?? 'var(--sand)'
+                      const provColor = PROVIDER_COLOR[r.provider] ?? 'var(--sand)'
                       return (
-                        <tr key={r.task} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <tr key={`${r.task}__${r.provider}__${r.model}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                           <td style={{ padding: '7px 8px' }}>
                             <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '10px', color: taskColor, background: `${taskColor}10`, border: `1px solid ${taskColor}30`, borderRadius: '3px', padding: '2px 7px', letterSpacing: '0.04em' }}>
                               {formatTask(r.task)}

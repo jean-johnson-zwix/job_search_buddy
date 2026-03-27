@@ -234,33 +234,33 @@ def _now_str() -> str:
 
 
 def save_llm_usage(entries: list[dict], run_date: Optional[date] = None) -> None:
-    """Aggregate per-call usage entries by task and upsert into llm_usage."""
+    """Aggregate per-call usage entries by (task, provider, model) and upsert into llm_usage."""
     if not entries:
         return
     db = get_client()
     today = str(run_date or date.today())
 
-    # aggregate by task
-    agg: dict[str, dict] = {}
+    # aggregate by (task, provider, model) so fallback providers get their own row
+    agg: dict[tuple, dict] = {}
     for e in entries:
-        task = e["task"]
-        if task not in agg:
-            agg[task] = {
-                "run_date":         today,
-                "task":             task,
-                "provider":         e["provider"],
-                "model":            e["model"],
-                "calls":            0,
-                "prompt_tokens":    0,
+        key = (e["task"], e["provider"], e["model"])
+        if key not in agg:
+            agg[key] = {
+                "run_date":          today,
+                "task":              e["task"],
+                "provider":          e["provider"],
+                "model":             e["model"],
+                "calls":             0,
+                "prompt_tokens":     0,
                 "completion_tokens": 0,
-                "total_tokens":     0,
-                "_duration_sum":    0.0,
+                "total_tokens":      0,
+                "_duration_sum":     0.0,
             }
-        agg[task]["calls"]             += 1
-        agg[task]["prompt_tokens"]     += e.get("prompt_tokens", 0)
-        agg[task]["completion_tokens"] += e.get("completion_tokens", 0)
-        agg[task]["total_tokens"]      += e.get("total_tokens", 0)
-        agg[task]["_duration_sum"]     += e.get("duration_ms", 0.0)
+        agg[key]["calls"]             += 1
+        agg[key]["prompt_tokens"]     += e.get("prompt_tokens", 0)
+        agg[key]["completion_tokens"] += e.get("completion_tokens", 0)
+        agg[key]["total_tokens"]      += e.get("total_tokens", 0)
+        agg[key]["_duration_sum"]     += e.get("duration_ms", 0.0)
 
     rows = []
     for row in agg.values():
@@ -268,8 +268,8 @@ def save_llm_usage(entries: list[dict], run_date: Optional[date] = None) -> None
         row["avg_duration_ms"] = avg_ms
         rows.append(row)
 
-    db.table("llm_usage").upsert(rows, on_conflict="run_date,task").execute()
-    logger.info(f"Saved LLM usage: {len(rows)} task(s) for {today}")
+    db.table("llm_usage").upsert(rows, on_conflict="run_date,task,provider,model").execute()
+    logger.info(f"Saved LLM usage: {len(rows)} task/provider/model combo(s) for {today}")
 
 
 def save_errors(errors: list[dict], run_date: Optional[date] = None) -> None:
