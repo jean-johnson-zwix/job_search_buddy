@@ -105,16 +105,6 @@ resume_extraction → data_loader → job_ingestion
 | `job_matcher` | Scores each job against the candidate profile; skips already-scored jobs |
 | `emailer` | Sends daily digest; saves LLM usage and pipeline errors to DB |
 
-**Scoring formula:**
-
-```
-final_score = (skill_fit×0.5 + role_fit×0.3 + exp_fit×0.2) / 100 × 0.50
-            + recency_score × 0.30
-            + tier_weight   × 0.12
-```
-
-Company tier weights: FAANG = 1.0, unicorn = 0.7, startup = 0.4.
-
 ---
 
 ## Environment Setup
@@ -129,7 +119,7 @@ OPENROUTER_API_KEY=
 GEMINI_API_KEY=
 
 SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_KEY=
 
 RESEND_API_KEY=
 RESEND_FROM_EMAIL=
