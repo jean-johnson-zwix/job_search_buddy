@@ -160,15 +160,20 @@ def node_job_extraction(state: PipelineState) -> dict:
             logger.error(f"  Extract failed '{job['title']}': {e}")
             errors.append({"job_id": job["id"], "job_title": job["title"], "node": "extract", "error": str(e)})
 
-    # known jobs — load skills from DB
-    for job in state["known_jobs"]:
+    # known jobs — load all skills in one query, touch last_seen_at in one query
+    known_jobs = state["known_jobs"]
+    if known_jobs:
         try:
-            job["skills"] = db.get_job_skills(job["id"])
-            db.upsert_job(job)
-            extracted.append(job)
+            known_ids = [j["id"] for j in known_jobs]
+            skills_by_id = db.get_job_skills_bulk(known_ids)
+            db.touch_jobs(known_ids)
+            for job in known_jobs:
+                job["skills"] = skills_by_id.get(job["id"], [])
+                extracted.append(job)
         except Exception as e:
-            logger.error(f"  DB load failed '{job['title']}': {e}")
-            errors.append({"job_id": job["id"], "job_title": job["title"], "node": "extract_known", "error": str(e)})
+            logger.error(f"  Bulk DB load failed for known jobs: {e}")
+            for job in known_jobs:
+                errors.append({"job_id": job["id"], "job_title": job["title"], "node": "extract_known", "error": str(e)})
 
     logger.info(f"Skills extracted of new jobs: {call_count} · "
                 f"Known jobs loaded: {len(state['known_jobs'])} · "

@@ -78,6 +78,26 @@ def get_job_skills(job_id: str) -> list[str]:
     )
     return [r["skill"] for r in (res.data or [])]
 
+
+def get_job_skills_bulk(job_ids: list[str]) -> dict[str, list[str]]:
+    """Load skills for multiple jobs in a single query. Returns {job_id: [skills]}."""
+    if not job_ids:
+        return {}
+    db = get_client()
+    res = db.table("job_skills").select("job_id, skill").in_("job_id", job_ids).execute()
+    result: dict[str, list[str]] = {}
+    for row in (res.data or []):
+        result.setdefault(row["job_id"], []).append(row["skill"])
+    return result
+
+
+def touch_jobs(job_ids: list[str]) -> None:
+    """Update last_seen_at for a batch of already-known jobs in a single query."""
+    if not job_ids:
+        return
+    db = get_client()
+    db.table("jobs").update({"last_seen_at": _now_str()}).in_("id", job_ids).execute()
+
 def get_candidate_skills() -> list[dict]:
     """Returns all rows from candidate_skills table."""
     db = get_client()

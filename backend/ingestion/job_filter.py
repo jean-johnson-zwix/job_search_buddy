@@ -143,10 +143,11 @@ IRRELEVANT_PRIMARY = [
     r"\bdata science manager\b",
     # clearly non-software
     r"\bbroadcast\b",
-    r"\bav engineer\b",             # audio/visual
+    r"\baudio.?visual\b",           # matches "audio visual" and "audio-visual"
+    r"\bav engineer\b",             # matches "AV engineer"
     r"\bnetwork engineer\b",        # network ops ≠ software
     r"\bservicenow\b",              # IT service management platform
-    r"\bsalesforce engineer\b",     # CRM admin ≠ software eng
+    r"\bsalesforce\b",              # CRM platform — any Salesforce role ≠ software eng
     r"\bkyc\b",
     r"\bspecialist\b",
     r"\bpartnerships\b",
@@ -221,7 +222,16 @@ def is_relevant(title: str) -> bool:
     full    = title.lower()
     primary = _primary(title)
 
-    # 1. Seniority gate 
+    # 0. Reject if title's location suffix is a known non-US location
+    #    e.g. "Software Engineer, Reykjavik" or "Engineer - London"
+    parts = re.split(r",|\s+-\s+", title, maxsplit=1)
+    if len(parts) > 1:
+        loc_suffix = parts[1].strip()
+        for pat in _NON_US_SIGNALS:
+            if re.search(pat, loc_suffix, re.IGNORECASE):
+                return False
+
+    # 1. Seniority gate
     for pat in EXCLUDE_SENIORITY:
         if re.search(pat, full):
             return False
@@ -250,6 +260,7 @@ _US_SIGNALS = [
 ]
 
 _NON_US_SIGNALS = [
+    r"Reykjavik", r"\bIceland\b",
     r"Dublin", r"London", r"Bengaluru", r"Bangalore", r"Toronto",
     r"Singapore", r"Tokyo", r"Sydney", r"Melbourne", r"Paris",
     r"Berlin", r"Munich", r"Amsterdam", r"Barcelona", r"Madrid",
@@ -288,12 +299,14 @@ def is_us_location(location: str, remote: bool) -> bool:
     stripped = location.strip().lower()
     if stripped in _UNKNOWN_EXACT:
         return True
-    for pat in _NON_US_SIGNALS:
-        if re.search(pat, location, re.IGNORECASE):
-            return False
+    # US signals take priority — "Remote - US/Canada" should pass
     for pat in _US_SIGNALS:
         if re.search(pat, location, re.IGNORECASE):
             return True
+    # Only reject if no US signal was found
+    for pat in _NON_US_SIGNALS:
+        if re.search(pat, location, re.IGNORECASE):
+            return False
     return True  # unknown — keep, let Gemini decide
 
 
