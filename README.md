@@ -17,11 +17,11 @@ An automated job search system that fetches engineering roles daily, scores them
 
 ## Architecture
 
-![Architecture Diagram](docs\architecture.png)
+![Architecture Diagram](docs/architecture.png)
 ---
 
 ## Pipeline Flow
-![Pipeline Flow Diagram](docs\pipeline.png)
+![Pipeline Flow Diagram](docs/pipeline.png)
 
 | Node | What it does |
 |---|---|

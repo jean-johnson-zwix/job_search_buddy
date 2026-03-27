@@ -3,6 +3,7 @@ CLAUDE.md
 .claude
 CHROME_PLUGIN*
 JOB_BUDDY*
-docs/*
+docs/*.md
+docs/*.drawio
 job_buddy/
 PORTFOLIO*
