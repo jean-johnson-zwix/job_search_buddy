@@ -136,7 +136,7 @@ export default function MonitorPage() {
           <div style={CARD_STYLE}>
             <div style={SECTION_LABEL()}>Token usage — last {tokenTrend.length} runs</div>
             <p style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '16px', color: 'var(--cream)', marginBottom: '16px' }}>
-              Total tokens per pipeline run
+              Total tokens per day
             </p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={tokenTrend} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>

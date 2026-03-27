@@ -53,9 +53,9 @@ export async function GET(request: Request) {
   // ── 2. Trends (last 8 weeks, computed from job_skills) ──────────────────────
   let tq = supabase
     .from('job_skills')
-    .select('job_id, skill, jobs!inner(role_type, first_seen_at, companies!inner(tier))')
+    .select('job_id, skill, jobs!inner(role_type, posted_at, companies!inner(tier))')
     .eq('required', true)
-    .gte('jobs.first_seen_at', eightWeeksAgo)
+    .gte('jobs.posted_at', eightWeeksAgo)
 
   if (role_type)    tq = tq.eq('jobs.role_type',      role_type)
   if (company_tier) tq = tq.eq('jobs.companies.tier', company_tier)
@@ -67,8 +67,8 @@ export async function GET(request: Request) {
   const weekSkillCounts: Record<string, Record<string, number>> = {}
 
   for (const r of (trendRaw ?? []) as any[]) {
-    if (!r.job_id || !r.jobs?.first_seen_at) continue
-    const week = getWeekStart(r.jobs.first_seen_at)
+    if (!r.job_id || !r.jobs?.posted_at) continue
+    const week = getWeekStart(r.jobs.posted_at)
     if (!weekJobIds[week])      weekJobIds[week]      = new Set()
     if (!weekSkillCounts[week]) weekSkillCounts[week] = {}
     weekJobIds[week].add(r.job_id)
