@@ -39,24 +39,27 @@ interface Match {
   green_flags:      string[]
   summary:          string
   jobs: {
-    title:     string
-    location:  string
-    remote:    boolean
-    apply_url: string
-    posted_at: string
-    seniority: string
-    companies: { name: string; tier: string }
+    title:       string
+    location:    string
+    remote:      boolean
+    apply_url:   string
+    posted_at:   string
+    seniority:   string
+    description: string
+    companies:   { name: string; tier: string }
   }
 }
 
 interface Props {
-  match:    Match
-  rank:     number
-  tab:      'to-apply' | 'applied'
-  onRemove: (jobId: string) => void
+  match:      Match
+  rank:       number
+  tab:        'to-apply' | 'applied'
+  onRemove:   (jobId: string) => void
+  selected?:  boolean
+  onToggle?:  (jobId: string) => void
 }
 
-export function JobCard({ match, rank, tab, onRemove }: Props) {
+export function JobCard({ match, rank, tab, onRemove, selected = false, onToggle }: Props) {
   const [status, setStatus] = useState<Status>(match.status)
   const job     = match.jobs
   const company = job.companies
@@ -77,12 +80,12 @@ export function JobCard({ match, rank, tab, onRemove }: Props) {
 
   return (
     <div style={{
-      background: 'var(--bg-card)',
+      background: selected ? 'rgba(234,197,88,0.04)' : 'var(--bg-card)',
       border: '1px solid var(--border)',
-      borderLeft: `2px solid ${accent}`,
+      borderLeft: `2px solid ${selected ? 'var(--yellow)' : accent}`,
       borderRadius: '10px',
       padding: '16px',
-      transition: 'border-color 0.2s, transform 0.2s',
+      transition: 'border-color 0.2s, background 0.15s',
     }}
     onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-hover)')}
     onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
@@ -90,8 +93,17 @@ export function JobCard({ match, rank, tab, onRemove }: Props) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '10px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ marginBottom: '5px' }}>
-            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.08em', marginRight: '6px' }}>
+          <div style={{ marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {onToggle && (
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={() => onToggle(match.job_id)}
+                onClick={e => e.stopPropagation()}
+                style={{ cursor: 'pointer', accentColor: 'var(--yellow)', flexShrink: 0, marginTop: '1px' }}
+              />
+            )}
+            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
               {String(rank).padStart(2, '0')} —
             </span>
             <span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--cream)' }}>

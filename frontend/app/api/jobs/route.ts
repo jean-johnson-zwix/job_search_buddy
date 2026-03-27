@@ -10,7 +10,7 @@ export async function GET() {
       green_flags, red_flags, summary, run_date,
       jobs (
         id, title, location, remote, apply_url,
-        posted_at, role_type, seniority,
+        posted_at, role_type, seniority, description,
         companies ( name, tier )
       )
     `)

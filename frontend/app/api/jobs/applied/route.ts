@@ -10,7 +10,7 @@ export async function GET() {
       matched_skills, gap_skills, summary,
       jobs (
         id, title, location, remote, apply_url,
-        posted_at, role_type, seniority,
+        posted_at, role_type, seniority, description,
         companies ( name, tier )
       )
     `)
