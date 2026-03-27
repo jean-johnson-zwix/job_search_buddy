@@ -42,14 +42,14 @@ LLM_TASK_CONFIGS: Dict[str, Dict[str, Any]] = {
     },
     JOB_SKILL_EXTRACTION: {
         "description": "Extract role_type, seniority, years_required, skills[] from a JD",
-        "provider": "cerebras",
-        "model": "llama3.1-8b",
+        "provider": "sambanova",
+        "model": "Qwen3-32B",
         "fallbacks": [
+            ("cerebras", "qwen-3-235b-a22b-instruct-2507"),
             ("groq", "llama-3.3-70b-versatile"),
-            ("sambanova", "Qwen3-32B"),
             ("gemini", "gemini-3.1-flash-lite-preview"),
         ],
-        "max_tokens": 1024,
+        "max_tokens": 4096,
         "temperature": 0.0,
         "response_format": "json",
     },

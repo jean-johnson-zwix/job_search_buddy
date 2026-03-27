@@ -35,16 +35,16 @@ OUTPUT FORMAT — Return valid JSON wrapped in these exact markers, nothing outs
 
 EXTRACTION RULES:
 - skills: flat list of canonical skill name strings — no objects, no metadata
+- LIMIT: Extract a maximum of 30 most important technical skills — required skills first
+- CONCISENESS: 1-3 words per skill. No long phrases ("Scalable backend systems" → omit; "Python" → keep)
 - Scan ALL sections: Responsibilities, Requirements, Preferred/Nice-to-have, Tech Stack, Qualifications
-- Extract ALL concrete technical skills found anywhere — no limit
 - Concrete = languages, frameworks, cloud services, databases, tools, ML libraries
 - No domain names ("distributed systems", "microservices"), no soft skills, no methodologies ("agile")
 - If the JD is vague about tech stack, return only what is explicitly mentioned — do not infer
 - years_required: MINIMUM years stated ("5-8 years" → 5, "5+ years" → 5), null if not mentioned
 - seniority: infer from title and scope; "Unknown" if years range spans more than 4 years
 - role_type: "ML" only if role involves model training/research; RAG/LLM pipelines = "SWE"
-If the JD is extremely long, prioritize extracting the 'Must Have' and 'Technical Requirements' sections first. 
-If you are reaching your output limit, ensure the JSON object is closed properly even if some 'Nice-to-have' skills are omitted.
+- FAIL-SAFE: Close the JSON with ---JSON_END--- immediately after the skills list. Do not add any text after it.
 
 ANTI-HALLUCINATION:
 - ONLY extract skills that appear verbatim or by clear implication in the provided resume text

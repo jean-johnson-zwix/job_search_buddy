@@ -324,6 +324,7 @@ class LLMClient:
         }
         if response_format == "json":
             payload["response_format"] = {"type": "json_object"}
+            payload["stop"] = ["---JSON_END---", "```"]
 
         headers = {
             "Authorization": f"Bearer {self.cerebras_api_key}",
@@ -369,6 +370,7 @@ class LLMClient:
         }
         if response_format == "json":
             payload["response_format"] = {"type": "json_object"}
+            payload["stop"] = ["---JSON_END---", "```"]
 
         headers = {
             "Authorization": f"Bearer {self.sambanova_api_key}",

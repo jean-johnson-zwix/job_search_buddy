@@ -31,16 +31,16 @@ def _parse_json(text: str) -> dict | None:
     try:
         return json.loads(text)
     except json.JSONDecodeError as e:
-        # Attempt truncation recovery: trim to last complete array item and close the object
-        recovered = re.sub(r',?\s*"[^"]*$', '', text)   # remove incomplete trailing string
-        recovered = re.sub(r',\s*$', '', recovered)       # remove trailing comma
-        recovered = recovered.rstrip() + ']}'             # close array + object
-        try:
-            result = json.loads(recovered)
-            logger.warning("JSON truncation recovered — skills may be incomplete")
-            return result
-        except json.JSONDecodeError:
-            pass
+        # Strip trailing junk after the last valid JSON delimiter
+        trimmed = re.sub(r'[^"}\]]*$', '', text).strip()
+        # Iteratively try closure sequences from simplest to most complete
+        for closure in ['"', '"]', '"}', '"]}', '" ]}', '"} }']:
+            try:
+                result = json.loads(trimmed + closure)
+                logger.warning("JSON truncation recovered (closure=%r) — skills may be incomplete", closure)
+                return result
+            except json.JSONDecodeError:
+                continue
         logger.warning(f"JSON parse failed: {e} — raw: {text[:200]}")
         return None
 
