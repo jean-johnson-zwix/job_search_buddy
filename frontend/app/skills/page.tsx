@@ -6,7 +6,20 @@ import {
   ResponsiveContainer, LineChart, Line, Legend,
 } from 'recharts'
 
-const CHART_COLORS = ['#f5e642', '#8fbf8a', '#f06faa', '#a899e6']
+const CHART_COLORS = [
+  '#f5e642',  // yellow
+  '#8fbf8a',  // sage
+  '#f06faa',  // pink
+  '#a899e6',  // lavender
+  '#f5a142',  // orange
+  '#42c9f5',  // cyan
+  '#e6c499',  // peach
+  '#99e6c9',  // mint
+  '#e699a8',  // rose
+  '#99c9e6',  // sky
+  '#c9e699',  // lime
+  '#c4a8e6',  // violet
+]
 
 const SECTION_LABEL = (color = 'var(--yellow)') => ({
   fontFamily: 'DM Mono, monospace',
@@ -63,7 +76,27 @@ export default function SkillsPage() {
     return Object.values(weeks).sort((a: any, b: any) => a.week.localeCompare(b.week))
   })()
 
-  const allTrendSkills = [...new Set((data?.trends ?? []).map((r: any) => r.skill))] as string[]
+  // Sum pct_of_jobs across all weeks per skill, then sort by total demand
+  const trendTotals: Record<string, number> = {}
+  for (const r of (data?.trends ?? [])) {
+    trendTotals[r.skill] = (trendTotals[r.skill] ?? 0) + r.pct_of_jobs
+  }
+  const allTrendSkills = Object.entries(trendTotals)
+    .sort(([, a], [, b]) => b - a)
+    .map(([skill]) => skill) as string[]
+
+  // Stable skill → color mapping so button and chart line always match.
+  // Cover all trend skills first, then fill in any selected skills not in trend data
+  // (e.g. gap skills pre-selected on load that may not appear in the trend window).
+  const skillColor: Record<string, string> = {}
+  allTrendSkills.forEach((skill, i) => {
+    skillColor[skill] = CHART_COLORS[i % CHART_COLORS.length]
+  })
+  selectedSkills.forEach((skill, i) => {
+    if (!skillColor[skill]) {
+      skillColor[skill] = CHART_COLORS[(allTrendSkills.length + i) % CHART_COLORS.length]
+    }
+  })
 
   const SELECT_STYLE = {
     fontFamily: 'DM Mono, monospace',
@@ -154,24 +187,28 @@ export default function SkillsPage() {
               last 8 weeks · select skills to compare
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '16px' }}>
-              {allTrendSkills.slice(0, 12).map((skill, i) => (
-                <button
-                  key={skill}
-                  onClick={() => setSelectedSkills(prev =>
-                    prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]
-                  )}
-                  style={{
-                    fontFamily: 'DM Mono, monospace', fontSize: '10px', letterSpacing: '0.04em',
-                    padding: '2px 9px', borderRadius: '3px', cursor: 'pointer',
-                    background: selectedSkills.includes(skill) ? CHART_COLORS[i % 4] : 'transparent',
-                    color:      selectedSkills.includes(skill) ? 'var(--bg-dark)' : 'var(--text-secondary)',
-                    border:     `1px solid ${selectedSkills.includes(skill) ? CHART_COLORS[i % 4] : 'var(--border)'}`,
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {skill}
-                </button>
-              ))}
+              {allTrendSkills.slice(0, CHART_COLORS.length).map((skill) => {
+                const color = skillColor[skill]
+                const active = selectedSkills.includes(skill)
+                return (
+                  <button
+                    key={skill}
+                    onClick={() => setSelectedSkills(prev =>
+                      prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]
+                    )}
+                    style={{
+                      fontFamily: 'DM Mono, monospace', fontSize: '10px', letterSpacing: '0.04em',
+                      padding: '2px 9px', borderRadius: '3px', cursor: 'pointer',
+                      background: active ? color : 'transparent',
+                      color:      active ? 'var(--bg-dark)' : 'var(--text-secondary)',
+                      border:     `1px solid ${active ? color : 'var(--border)'}`,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {skill}
+                  </button>
+                )
+              })}
             </div>
             {trendData.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px', fontFamily: 'DM Mono, monospace', fontSize: '11px', color: 'var(--text-muted)' }}>
@@ -185,10 +222,10 @@ export default function SkillsPage() {
                   <YAxis tickFormatter={(v: number) => `${v}%`} tick={{ fontSize: 10, fontFamily: 'DM Mono, monospace', fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: any) => `${v}%`} />
                   <Legend wrapperStyle={{ fontFamily: 'DM Mono, monospace', fontSize: '10px', color: 'var(--text-secondary)' }} />
-                  {selectedSkills.map((skill, i) => (
+                  {selectedSkills.map((skill) => (
                     <Line key={skill} type="monotone" dataKey={skill}
-                      stroke={CHART_COLORS[i % 4]} strokeWidth={1.5}
-                      dot={{ r: 3, fill: 'var(--bg-card)', stroke: CHART_COLORS[i % 4], strokeWidth: 1.5 }}
+                      stroke={skillColor[skill]} strokeWidth={1.5}
+                      dot={{ r: 3, fill: 'var(--bg-card)', stroke: skillColor[skill], strokeWidth: 1.5 }}
                       activeDot={{ r: 4 }}
                     />
                   ))}
