@@ -109,11 +109,21 @@ def node_job_ingestion(state: PipelineState) -> dict:
 # conditional_edge: after jobs are loaded
 def router_post_job_ingestion(state: PipelineState) -> dict:
     logger.info("CONDITIONAL NODE - CHECK FOR NEW JOBS")
-    total = len(state.get("new_jobs", [])) + len(state.get("known_jobs", []))
-    if total > 0:
-        return "continue"
-    logger.info("No jobs fetched — skipping to email")
-    return "skip_to_email"
+    new_jobs      = state.get("new_jobs", [])
+    known_jobs    = state.get("known_jobs", [])
+    already_scored = state.get("already_scored", set())
+
+    if not new_jobs and not known_jobs:
+        logger.info("No jobs fetched — skipping to email")
+        return "skip_to_email"
+
+    unscored_known = [j for j in known_jobs if j["id"] not in already_scored]
+    if not new_jobs and not unscored_known:
+        logger.info(f"No new jobs and all {len(known_jobs)} known jobs already scored — skipping to email")
+        return "skip_to_email"
+
+    logger.info(f"Work to do: {len(new_jobs)} new + {len(unscored_known)} unscored known — continuing")
+    return "continue"
 
 # node 4: node_job_extraction
 @log_methods
